@@ -117,8 +117,5 @@
   .bg-primary\/5 { background-color: hsl(var(--primary)/0.05); }
 }
 
-/* ─── No body transition (ripple handles it) ──────────── */
-*, *::before, *::after {
-  transition-property: color, border-color, fill, stroke;
-  transition-duration: 0.3s;
-}
+/* ─── Perf: no global wildcard transitions ────────────── */
+/* transitions are applied per-component only, not globally */

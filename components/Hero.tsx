@@ -107,14 +107,23 @@ export default function Hero() {
 function HeroBg() {
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {/* orb 1 */}
-      <motion.div className="absolute -top-[20%] -left-[10%] w-[55vw] h-[55vw] rounded-full"
-        style={{ background: "radial-gradient(circle, var(--hero-orb-1,hsl(258 70% 45%/0.22)) 0%, transparent 65%)", filter: "blur(90px)" }}
-        animate={{ x: [0,28,0], y: [0,-20,0] }} transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }} />
-      {/* orb 2 */}
-      <motion.div className="absolute -bottom-[15%] -right-[8%] w-[40vw] h-[40vw] rounded-full"
-        style={{ background: "radial-gradient(circle, var(--hero-orb-2,hsl(300 60%35%/0.14)) 0%, transparent 65%)", filter: "blur(100px)" }}
-        animate={{ x: [0,-22,0], y: [0,18,0] }} transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 4 }} />
+      {/* Blur wrapper is static — only the position animates, not the blur layer */}
+      <div className="absolute -top-[20%] -left-[10%] w-[55vw] h-[55vw]" style={{ filter: "blur(80px)" }}>
+        <motion.div
+          className="w-full h-full rounded-full"
+          style={{ background: "radial-gradient(circle, hsl(258 70% 45%/0.22) 0%, transparent 65%)", willChange: "transform" }}
+          animate={{ x: [0,28,0], y: [0,-20,0] }}
+          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </div>
+      <div className="absolute -bottom-[15%] -right-[8%] w-[40vw] h-[40vw]" style={{ filter: "blur(90px)" }}>
+        <motion.div
+          className="w-full h-full rounded-full"
+          style={{ background: "radial-gradient(circle, hsl(300 60% 35%/0.14) 0%, transparent 65%)", willChange: "transform" }}
+          animate={{ x: [0,-22,0], y: [0,18,0] }}
+          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut", delay: 4 }}
+        />
+      </div>
     </div>
   );
 }
@@ -150,7 +159,7 @@ function HeroSplit({ animStyle }: { animStyle: AnimStyle }) {
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       transition={{ duration: 0.35 }}>
       <HeroBg />
-      <motion.div className="relative z-10 max-w-7xl mx-auto px-6 pt-28 pb-16 w-full" style={{ y, opacity: op }}>
+      <motion.div className="relative z-10 max-w-7xl mx-auto px-6 pt-28 pb-16 w-full" style={{ y, opacity: op, willChange: "transform, opacity" }}>
         <div className="grid lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_460px] gap-14 items-center">
           <motion.div variants={container} initial="hidden" animate="show"
             style={{ perspective: animStyle === "split-reveal" ? 800 : undefined }}>

@@ -3,136 +3,172 @@
 import { useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 
-interface Particle {
-  x: number; y: number;
-  vx: number; vy: number;
-  size: number; opacity: number;
-  hue: number;
+// Particle pool — plain typed arrays, no object allocation per frame
+const MAX_P = 35;
+const px  = new Float32Array(MAX_P);
+const py  = new Float32Array(MAX_P);
+const pvx = new Float32Array(MAX_P);
+const pvy = new Float32Array(MAX_P);
+const psz = new Float32Array(MAX_P);
+const pop = new Float32Array(MAX_P);
+const phue= new Float32Array(MAX_P);
+
+function initParticles(W: number, H: number) {
+  for (let i = 0; i < MAX_P; i++) {
+    px[i]  = Math.random() * W;
+    py[i]  = Math.random() * H;
+    pvx[i] = (Math.random() - 0.5) * 0.3;
+    pvy[i] = (Math.random() - 0.5) * 0.3;
+    psz[i] = Math.random() * 1.4 + 0.5;
+    pop[i] = Math.random() * 0.4 + 0.12;
+    phue[i]= Math.random() * 60 + 240;
+  }
+}
+
+// Pre-built grid canvas — only redrawn on resize, not every frame
+function buildGrid(W: number, H: number, isDark: boolean): HTMLCanvasElement {
+  const off = document.createElement("canvas");
+  off.width = W; off.height = H;
+  const ctx = off.getContext("2d")!;
+  const size = 80;
+  const alpha = isDark ? 0.025 : 0.05;
+  ctx.strokeStyle = isDark
+    ? `rgba(200,190,255,${alpha})`
+    : `rgba(40,30,20,${alpha})`;
+  ctx.lineWidth = 0.5;
+  ctx.beginPath(); // single path for ALL lines
+  for (let x = 0; x <= W; x += size) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+  for (let y = 0; y <= H; y += size) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
+  ctx.stroke();
+  return off;
 }
 
 export default function BackgroundCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { resolvedTheme } = useTheme();
-  const animRef = useRef<number>();
-  const particles = useRef<Particle[]>([]);
-  const mouseRef = useRef({ x: 0, y: 0 });
+  const raf   = useRef<number>();
+  const mouse = useRef({ x: -999, y: -999 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d")!;
+    const ctx = canvas.getContext("2d", { alpha: true })!;
+
+    let W = 0, H = 0;
+    let gridCache: HTMLCanvasElement | null = null;
+    let isDark = resolvedTheme !== "light";
+
+    // Pre-compute particle fill colours as actual rgba strings (done once)
+    const darkFills:  string[] = [];
+    const lightFills: string[] = [];
+    for (let i = 0; i < MAX_P; i++) {
+      const a = pop[i] * 0.45;
+      darkFills[i]  = `rgba(160,140,240,${a.toFixed(3)})`;
+      lightFills[i] = `rgba(100,70,20,${(pop[i]*0.3).toFixed(3)})`;
+    }
 
     const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      gridCache = buildGrid(W, H, isDark);
+      initParticles(W, H);
     };
+
+    // Rebuild grid when theme changes
+    const rebuildGrid = () => {
+      isDark = resolvedTheme !== "light";
+      if (W > 0) gridCache = buildGrid(W, H, isDark);
+    };
+
     resize();
-    window.addEventListener("resize", resize);
+    window.addEventListener("resize", resize, { passive: true });
+    window.addEventListener("mousemove", (e) => {
+      mouse.current.x = e.clientX;
+      mouse.current.y = e.clientY;
+    }, { passive: true });
 
-    const onMouse = (e: MouseEvent) => {
-      mouseRef.current = { x: e.clientX, y: e.clientY };
-    };
-    window.addEventListener("mousemove", onMouse);
+    // ── THROTTLE: target 30fps (16ms → 33ms per frame) ──
+    let last = 0;
+    let t    = 0;
 
-    // Init particles
-    const N = 55;
-    particles.current = Array.from({ length: N }, () => ({
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-      vx: (Math.random() - 0.5) * 0.35,
-      vy: (Math.random() - 0.5) * 0.35,
-      size: Math.random() * 1.8 + 0.4,
-      opacity: Math.random() * 0.5 + 0.1,
-      hue: Math.random() * 60 + 240, // 240-300 = blue/violet range
-    }));
-
-    let t = 0;
-    const draw = () => {
-      t += 0.004;
-      const isDark = resolvedTheme === "dark";
-      const W = canvas.width, H = canvas.height;
+    const draw = (now: number) => {
+      raf.current = requestAnimationFrame(draw);
+      if (now - last < 32) return; // ~30fps cap
+      last = now;
+      t += 0.003;
 
       ctx.clearRect(0, 0, W, H);
 
-      // ── Animated orbs ──────────────────────────────────────────
-      const orbs = [
-        { x: 0.15 + Math.sin(t * 0.7) * 0.08, y: 0.25 + Math.cos(t * 0.5) * 0.1, r: 0.38, hue: isDark ? 258 : 22, sat: isDark ? 70 : 85, lit: isDark ? 40 : 55, a: isDark ? 0.14 : 0.16 },
-        { x: 0.82 + Math.cos(t * 0.6) * 0.07, y: 0.15 + Math.sin(t * 0.8) * 0.08, r: 0.28, hue: isDark ? 300 : 350, sat: isDark ? 60 : 75, lit: isDark ? 38 : 52, a: isDark ? 0.1 : 0.12 },
-        { x: 0.55 + Math.sin(t * 0.4) * 0.12, y: 0.65 + Math.cos(t * 0.55) * 0.09, r: 0.32, hue: isDark ? 200 : 195, sat: isDark ? 55 : 70, lit: isDark ? 35 : 50, a: isDark ? 0.08 : 0.1 },
-        { x: 0.1 + Math.cos(t * 0.35) * 0.06, y: 0.75 + Math.sin(t * 0.45) * 0.07, r: 0.22, hue: isDark ? 280 : 40, sat: isDark ? 65 : 80, lit: isDark ? 42 : 55, a: isDark ? 0.07 : 0.09 },
+      // ── Orbs — pre-computed positions, single gradient each ──
+      const orbData = [
+        { bx: 0.15 + Math.sin(t * 0.7) * 0.08, by: 0.25 + Math.cos(t * 0.5) * 0.1, r: 0.36, a: isDark ? 0.13 : 0.14, h: isDark ? 258 : 22, s: isDark ? 68 : 82, l: isDark ? 40 : 54 },
+        { bx: 0.82 + Math.cos(t * 0.6) * 0.07, by: 0.15 + Math.sin(t * 0.8) * 0.08, r: 0.26, a: isDark ? 0.09 : 0.10, h: isDark ? 300 : 350, s: isDark ? 58 : 72, l: isDark ? 37 : 50 },
+        { bx: 0.55 + Math.sin(t * 0.4) * 0.11, by: 0.65 + Math.cos(t * 0.55) * 0.09, r: 0.30, a: isDark ? 0.07 : 0.09, h: isDark ? 200 : 195, s: isDark ? 52 : 68, l: isDark ? 34 : 48 },
       ];
 
-      for (const orb of orbs) {
-        const grd = ctx.createRadialGradient(orb.x * W, orb.y * H, 0, orb.x * W, orb.y * H, orb.r * W);
-        grd.addColorStop(0, `hsla(${orb.hue},${orb.sat}%,${orb.lit}%,${orb.a})`);
-        grd.addColorStop(1, `hsla(${orb.hue},${orb.sat}%,${orb.lit}%,0)`);
-        ctx.fillStyle = grd;
-        ctx.fillRect(0, 0, W, H);
+      for (const o of orbData) {
+        const cx = o.bx * W, cy = o.by * H, r = o.r * W;
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        g.addColorStop(0, `hsla(${o.h},${o.s}%,${o.l}%,${o.a})`);
+        g.addColorStop(1, `hsla(${o.h},${o.s}%,${o.l}%,0)`);
+        ctx.fillStyle = g;
+        ctx.fillRect(cx - r, cy - r, r * 2, r * 2); // draw ONLY the bounding box, not full screen
       }
 
-      // ── Grid ──────────────────────────────────────────────────
-      const gridAlpha = isDark ? 0.028 : 0.055;
-      const gridSize = 80;
-      ctx.strokeStyle = isDark ? `rgba(200,190,255,${gridAlpha})` : `rgba(40,30,20,${gridAlpha})`;
-      ctx.lineWidth = 0.5;
-      for (let x = 0; x < W; x += gridSize) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-      }
-      for (let y = 0; y < H; y += gridSize) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-      }
+      // ── Cached grid (blit, no re-draw) ──
+      if (gridCache) ctx.drawImage(gridCache, 0, 0);
 
-      // ── Particles ─────────────────────────────────────────────
-      const { x: mx, y: my } = mouseRef.current;
-      for (const p of particles.current) {
-        // Mouse repulsion
-        const dx = p.x - mx, dy = p.y - my;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 120) {
-          const f = (120 - dist) / 120 * 0.3;
-          p.vx += (dx / dist) * f;
-          p.vy += (dy / dist) * f;
+      // ── Particles ──
+      const mx = mouse.current.x, my = mouse.current.y;
+      const fills = isDark ? darkFills : lightFills;
+
+      for (let i = 0; i < MAX_P; i++) {
+        const dx = px[i] - mx, dy = py[i] - my;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < 14400) { // 120px radius (120²=14400)
+          const dist = Math.sqrt(d2);
+          const f = (120 - dist) / 120 * 0.25;
+          pvx[i] += (dx / dist) * f;
+          pvy[i] += (dy / dist) * f;
         }
+        px[i] += pvx[i]; py[i] += pvy[i];
+        pvx[i] *= 0.985; pvy[i] *= 0.985;
+        if (px[i] < 0) px[i] = W; else if (px[i] > W) px[i] = 0;
+        if (py[i] < 0) py[i] = H; else if (py[i] > H) py[i] = 0;
 
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vx *= 0.99; p.vy *= 0.99; // damping
-
-        if (p.x < 0) p.x = W;
-        if (p.x > W) p.x = 0;
-        if (p.y < 0) p.y = H;
-        if (p.y > H) p.y = 0;
-
-        const alpha = (isDark ? 0.45 : 0.35) * p.opacity;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = isDark
-          ? `hsla(${p.hue},65%,72%,${alpha})`
-          : `hsla(${p.hue - 40},60%,35%,${alpha})`;
+        ctx.arc(px[i], py[i], psz[i], 0, 6.2832);
+        ctx.fillStyle = fills[i];
         ctx.fill();
       }
 
-      // ── Vignette ──────────────────────────────────────────────
-      const vig = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * 0.72);
-      vig.addColorStop(0, "rgba(0,0,0,0)");
-      vig.addColorStop(1, isDark ? "rgba(0,0,0,0.45)" : "rgba(0,0,0,0.08)");
-      ctx.fillStyle = vig;
-      ctx.fillRect(0, 0, W, H);
-
-      animRef.current = requestAnimationFrame(draw);
+      // ── Vignette — CSS handles this now, skip canvas vignette ──
     };
 
-    animRef.current = requestAnimationFrame(draw);
+    raf.current = requestAnimationFrame(draw);
+
     return () => {
       window.removeEventListener("resize", resize);
-      window.removeEventListener("mousemove", onMouse);
-      if (animRef.current) cancelAnimationFrame(animRef.current);
+      if (raf.current) cancelAnimationFrame(raf.current);
     };
   }, [resolvedTheme]);
 
   return (
-    <canvas ref={canvasRef}
-      className="fixed inset-0 w-full h-full pointer-events-none"
-      style={{ zIndex: 0 }} />
+    <>
+      {/* Canvas for particles + grid + orbs */}
+      <canvas
+        ref={canvasRef}
+        className="fixed inset-0 w-full h-full pointer-events-none"
+        style={{ zIndex: 0 }}
+      />
+      {/* Vignette via CSS — zero GPU cost */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          zIndex: 1,
+          background: "radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.38) 100%)",
+        }}
+      />
+    </>
   );
 }

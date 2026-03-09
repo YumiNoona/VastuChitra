@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "./ThemeToggle";
 import { haptic } from "@/lib/utils";
 import { Menu, X, Zap } from "lucide-react";
@@ -18,15 +18,24 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
-  const { scrollY } = useScroll();
+  const ticking = useRef(false);
 
-  useMotionValueEvent(scrollY, "change", (v) => {
-    setScrolled(v > 50);
-    // Hide on scroll down, show on scroll up
-    if (v > lastY.current + 8 && v > 120) setHidden(true);
-    else if (v < lastY.current - 4) setHidden(false);
-    lastY.current = v;
-  });
+  useEffect(() => {
+    const onScroll = () => {
+      if (ticking.current) return;
+      ticking.current = true;
+      requestAnimationFrame(() => {
+        const v = window.scrollY;
+        setScrolled(v > 50);
+        if (v > lastY.current + 8 && v > 120) setHidden(true);
+        else if (v < lastY.current - 4) setHidden(false);
+        lastY.current = v;
+        ticking.current = false;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     <>
