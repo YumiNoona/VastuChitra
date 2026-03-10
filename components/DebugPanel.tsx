@@ -51,10 +51,12 @@ const PAGE_ANIMATIONS = [
 ] as const;
 
 const CURSOR_VARIANTS = [
-  { id:"dot-ring",   label:"Dot + Ring",  sub:"Classic dot with trailing ring"    },
-  { id:"crosshair",  label:"Crosshair",   sub:"Precision architectural reticle"   },
-  { id:"spotlight",  label:"Spotlight",   sub:"Soft glow follows cursor"          },
-  { id:"magnetic",   label:"Magnetic",    sub:"Morphing blob with blend mode"     },
+  { id:"dot-ring",   label:"Dot + Ring",   sub:"Classic primary dot with trailing ring"      },
+  { id:"magnetic",   label:"Magnetic",     sub:"Morphing blob, inverts colours beneath it"   },
+  { id:"xray",       label:"X-Ray",        sub:"Blend circle reveals depth layer under it"   },
+  { id:"ink-drop",   label:"Ink Drop",     sub:"Squishes into underline on text hover"       },
+  { id:"torch",      label:"Torch",        sub:"Darkens screen — focused beam of light"      },
+  { id:"precision",  label:"Precision",    sub:"Snappy reticle with tick marks"              },
 ] as const;
 
 export const HERO_VARIANTS = [
