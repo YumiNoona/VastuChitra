@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { LayoutGrid, Sliders } from "lucide-react";
-import { projects, Project, ProjectType } from "@/data/projects";
+import { getProjects, Project, ProjectType } from "@/lib/supabase";
 import ProjectCard from "./ProjectCard";
 import ProjectCarousel, { CarouselStyle } from "./ProjectCarousel";
 import LaunchModal from "./LaunchModal";
@@ -13,12 +13,18 @@ import { useDebug } from "./DebugPanel";
 const filters: Array<ProjectType | "All"> = ["All","Residential","Commercial","Mixed-Use","Hospitality","Cultural"];
 
 export default function ProjectGrid() {
-  const [filter, setFilter] = useState<ProjectType | "All">("All");
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [filter, setFilter]     = useState<ProjectType | "All">("All");
   const [selected, setSelected] = useState<Project | null>(null);
-  const [view, setView] = useState<"grid" | "carousel">("carousel");
-  const { carouselStyle } = useDebug();
+  const [view, setView]         = useState<"grid" | "carousel">("carousel");
+  const { carouselStyle }       = useDebug();
 
-  const filtered = filter === "All" ? projects : projects.filter((p) => p.type === filter);
+  useEffect(() => {
+    getProjects().then(data => { setProjects(data); setLoading(false); });
+  }, []);
+
+  const filtered = filter === "All" ? projects : projects.filter(p => p.type === filter);
 
   return (
     <section id="projects" className="relative py-28 overflow-hidden" aria-labelledby="projects-title">
@@ -29,59 +35,64 @@ export default function ProjectGrid() {
               initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
               — Portfolio
             </motion.span>
-            <motion.h2 id="projects-title" className="font-light leading-tight"
-              style={{ fontFamily: "var(--font-display)", fontSize: "clamp(2.5rem,5vw,4rem)" }}
-              initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}>
-              Live Projects
+            <motion.h2 id="projects-title"
+              className="font-light leading-[0.9] tracking-tight"
+              style={{ fontFamily: "var(--font-display)", fontSize: "clamp(2.5rem,5vw,4.5rem)" }}
+              initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }} transition={{ delay: 0.08 }}>
+              Selected<br /><span className="text-gradient italic">Projects</span>
             </motion.h2>
           </div>
 
-          <motion.div className="flex items-center gap-3 flex-wrap"
-            initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.2 }}>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {filters.map((f) => {
-                const count = f === "All" ? projects.length : projects.filter(p => p.type === f).length;
-                const active = filter === f;
-                return (
-                  <motion.button key={f} onClick={() => { haptic(5); setFilter(f); }}
-                    className={cn("relative px-3.5 py-1.5 rounded-full text-xs transition-all duration-200",
-                      active ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground border border-border")}
-                    whileTap={{ scale: 0.95 }}>
-                    {active && <motion.span layoutId="proj-filter" className="absolute inset-0 rounded-full bg-primary"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.4 }} />}
-                    <span className="relative">{f} <span className="opacity-50">{count}</span></span>
-                  </motion.button>
-                );
-              })}
-            </div>
-
-            <div className="flex items-center gap-0.5 p-1 rounded-xl border"
-              style={{ background: "hsl(var(--muted)/0.6)", borderColor: "hsl(var(--border)/0.5)" }}>
+          <div className="flex items-center gap-3">
+            {/* View toggle */}
+            <div className="flex items-center gap-1 p-1 rounded-xl border border-border/50"
+              style={{ background: "hsl(var(--card)/0.5)" }}>
               {([["carousel", Sliders], ["grid", LayoutGrid]] as const).map(([v, Icon]) => (
-                <button key={v} onClick={() => { haptic(5); setView(v); }}
-                  className={cn("w-8 h-7 rounded-lg flex items-center justify-center transition-all",
-                    view === v ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}>
-                  <Icon size={13} />
+                <button key={v} onClick={() => { setView(v); haptic(4); }}
+                  className={cn("px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all",
+                    view === v ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+                  <Icon size={12} /> {v.charAt(0).toUpperCase() + v.slice(1)}
                 </button>
               ))}
             </div>
-          </motion.div>
+          </div>
         </div>
 
-        <motion.div layout>
-          {view === "carousel" ? (
-            <motion.div key="carousel" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
-              <ProjectCarousel projects={filtered} onLaunch={(p) => { haptic(10); setSelected(p); }} style={carouselStyle as CarouselStyle} />
-            </motion.div>
-          ) : (
-            <motion.div key="grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
-              {filtered.map((p, i) => (
-                <ProjectCard key={p.id} project={p} index={i} onLaunch={(p) => { haptic(10); setSelected(p); }} />
-              ))}
-            </motion.div>
-          )}
+        {/* Filters */}
+        <motion.div className="flex items-center gap-2 mb-10 flex-wrap"
+          initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+          {filters.map(f => (
+            <button key={f} onClick={() => { setFilter(f); haptic(3); }}
+              className={cn("px-4 py-1.5 rounded-full text-xs font-medium border transition-all",
+                filter === f
+                  ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
+                  : "border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/30")}>
+              {f}
+            </button>
+          ))}
         </motion.div>
+
+        {/* Content */}
+        {loading ? (
+          <div className="flex items-center justify-center py-24">
+            <div className="w-8 h-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-24 text-muted-foreground text-sm">No projects yet.</div>
+        ) : view === "carousel" ? (
+          <ProjectCarousel
+            projects={filtered}
+            style={carouselStyle as CarouselStyle}
+            onSelect={p => setSelected(p)}
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map((p, i) => (
+              <ProjectCard key={p.id} project={p} index={i} onLaunch={setSelected} />
+            ))}
+          </div>
+        )}
       </div>
 
       {selected && <LaunchModal project={selected} onClose={() => setSelected(null)} />}

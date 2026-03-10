@@ -6,7 +6,7 @@ import ThemeToggle from "./ThemeToggle";
 import { haptic } from "@/lib/utils";
 import { Menu, X, Zap } from "lucide-react";
 
-const BRAND = "Interactive Visualization";
+const BRAND = "Interactive ArchViz";
 const navLinks = [
   { label: "Projects", href: "#projects" },
   { label: "About", href: "#about" },

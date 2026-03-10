@@ -3,7 +3,8 @@
 import { useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, ExternalLink, ArrowLeft, ArrowRight } from "lucide-react";
-import { Project } from "@/data/projects";
+
+import { Project } from "@/lib/supabase";
 import { haptic, cn } from "@/lib/utils";
 
 export type CarouselStyle = "fan-3d" | "glass-stack" | "coverflow" | "orbital";
@@ -179,9 +180,15 @@ export default function ProjectCarousel({ projects, onLaunch, style = "fan-3d" }
                 didDrag.current = false;
               }}
             >
-              {/* Gradient background */}
-              <div className="absolute inset-0"
-                style={{ background: `radial-gradient(ellipse at 40% 35%, ${bg.b} 0%, ${bg.a} 55%, ${bg.c} 100%)` }} />
+              {/* Background: real image or gradient fallback */}
+              {project.image_url ? (
+                <img src={project.image_url} alt={project.title}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{ transition: "transform 0.6s ease", transform: isActive ? "scale(1.03)" : "scale(1)" }} />
+              ) : (
+                <div className="absolute inset-0"
+                  style={{ background: `radial-gradient(ellipse at 40% 35%, ${bg.b} 0%, ${bg.a} 55%, ${bg.c} 100%)` }} />
+              )}
 
               {/* Glass shine on top-left */}
               <div className="absolute top-0 left-0 right-0 h-[45%] pointer-events-none"

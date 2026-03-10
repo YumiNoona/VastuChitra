@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
-import { Project } from "@/data/projects";
+import { Project } from "@/lib/supabase";
 import { saveVisitor } from "@/lib/supabase";
 import { haptic } from "@/lib/utils";
 
@@ -32,7 +32,7 @@ export default function LaunchModal({ project, onClose }: Props) {
     catch { /* silent */ }
     setStage("success"); haptic(15);
     setTimeout(() => {
-      window.open(project.streamURL, "_blank", "noopener,noreferrer");
+      window.open(project.stream_url, "_blank", "noopener,noreferrer");
       onClose();
       setTimeout(() => { setStage("form"); setForm({ name:"", email:"", contact:"" }); }, 300);
     }, 1800);

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { MapPin, Calendar, ArrowUpRight } from "lucide-react";
-import { Project } from "@/data/projects";
+import { Project } from "@/lib/supabase";
 
 const typeColors: Record<string, { bg: string; text: string; border: string }> = {
   Residential: { bg: "hsl(142 40% 35% / 0.12)", text: "hsl(142 55% 55%)", border: "hsl(142 40% 40% / 0.25)" },
@@ -47,14 +47,25 @@ export default function ProjectCard({ project, index, onLaunch }: Props) {
     >
       {/* Image area */}
       <div className="relative h-52 overflow-hidden flex-shrink-0">
-        <div className="absolute inset-0" style={{
-          background: `radial-gradient(ellipse at 40% 40%, ${grad})`,
-        }} />
-
-        {/* Architectural SVG per card */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <CardIllustration id={project.id} hovered={hovered} />
-        </div>
+        {project.image_url ? (
+          // Real image from Supabase Storage
+          <img
+            src={project.image_url}
+            alt={project.title}
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700"
+            style={{ transform: hovered ? "scale(1.06)" : "scale(1)" }}
+          />
+        ) : (
+          // Fallback SVG illustration
+          <>
+            <div className="absolute inset-0" style={{
+              background: `radial-gradient(ellipse at 40% 40%, ${grad})`,
+            }} />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <CardIllustration id={project.id} hovered={hovered} />
+            </div>
+          </>
+        )}
 
         {/* Hover darken */}
         <div className="absolute inset-0 transition-opacity duration-300"
