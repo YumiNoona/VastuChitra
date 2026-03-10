@@ -130,8 +130,14 @@ export default function Hero() {
 //  Shared: background orbs  (static blur wrapper = no GPU re-blur each frame)
 // ─────────────────────────────────────────────────────────────────────────────
 function HeroBg() {
+  const { config } = useSiteConfig();
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {/* Custom hero background image */}
+      {config.heroImageUrl && (
+        <div className="absolute inset-0 z-0"
+          style={{ backgroundImage: `url(${config.heroImageUrl})`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.35 }}/>
+      )}
       <div className="absolute -top-[20%] -left-[10%] w-[55vw] h-[55vw]"
         style={{ filter: "blur(80px)" }}>
         <motion.div className="w-full h-full rounded-full"
@@ -234,12 +240,12 @@ function HeroSplit({ animStyle }: { animStyle: AnimStyle }) {
               </motion.a>
             </motion.div>
 
-            <motion.div variants={item} className="flex items-center gap-10 pt-8 border-t border-border/40">
+            <motion.div variants={item} className="flex flex-wrap items-center gap-6 pt-8 border-t border-border/40">
               {cfg.stats.map(s => (
-                <div key={s.label}>
-                  <div className="font-light leading-none mb-1"
-                    style={{ fontFamily: "var(--font-display)", fontSize: "1.7rem" }}>{s.value}</div>
-                  <div className="text-[10px] tracking-widest uppercase text-muted-foreground">{s.label}</div>
+                <div key={s.label} className="min-w-0">
+                  <div className="font-light leading-none mb-1 truncate"
+                    style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.3rem,2.5vw,1.7rem)" }}>{s.value}</div>
+                  <div className="text-[10px] tracking-widest uppercase text-muted-foreground truncate">{s.label}</div>
                 </div>
               ))}
             </motion.div>
@@ -307,9 +313,9 @@ function HeroCentered({ animStyle }: { animStyle: AnimStyle }) {
           </motion.a>
         </motion.div>
 
-        <motion.div variants={item} className="flex items-center justify-center gap-12 mt-16 pt-8 border-t border-border/30">
+        <motion.div variants={item} className="flex flex-wrap items-center justify-center gap-8 mt-16 pt-8 border-t border-border/30">
           {cfg.stats.map(s => (
-            <div key={s.label} className="text-center">
+            <div key={s.label} className="text-center min-w-[60px]">
               <div className="font-light mb-0.5"
                 style={{ fontFamily: "var(--font-display)", fontSize: "2rem" }}>{s.value}</div>
               <div className="text-[9px] tracking-widest uppercase text-muted-foreground">{s.label}</div>

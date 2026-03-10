@@ -145,7 +145,7 @@ export default function ProjectCarousel({ projects, onLaunch, style = "fan-3d" }
     <div className="select-none w-full">
       {/* ── Stage — perspective set HERE so all cards share one vanishing point */}
       <div
-        className="relative flex items-center justify-center"
+        className="relative flex items-center justify-center overflow-hidden"
         style={{ height: stageH, perspective: "1100px", perspectiveOrigin: "50% 48%" }}
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}
