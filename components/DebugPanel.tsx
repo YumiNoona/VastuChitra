@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, useEffect, useRef, createContext, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings2, X, Type, Palette, Layout, Eye, Zap, Globe, Save, Trash2 as Trash,
   MousePointer, Image, AlignLeft, Phone, MapPin, Mail, Link, Sparkles } from "lucide-react";
@@ -84,21 +84,29 @@ export const useDebug = () => useContext(DebugContext);
 
 /* ══════════════════════════════════════════════════════════  PROVIDER  */
 export function DebugProvider({ children }: { children: React.ReactNode }) {
-  const { layout, saveLayout } = useSiteConfig();
+  const { layout, layoutLoaded, saveLayout } = useSiteConfig();
 
-  const [heroVariant,   setHeroVariantState]   = useState(layout.heroVariant);
-  const [footerVariant, setFooterVariantState] = useState(layout.footerVariant);
-  const [carouselStyle, setCarouselStyleState] = useState(layout.carouselStyle);
-  const [pageAnimation, setPageAnimationState] = useState(layout.animStyle);
-  const [cursorVariant, setCursorVariantState] = useState(layout.cursorStyle);
-  const [fontId,        setFontId]             = useState(layout.fontId);
-  const [darkId,        setDarkId]             = useState(layout.darkId);
-  const [lightId,       setLightId]            = useState(layout.lightId);
+  // Initialize with hardcoded defaults — Supabase will override via useEffect below
+  const [heroVariant,   setHeroVariantState]   = useState("split");
+  const [footerVariant, setFooterVariantState] = useState("minimal");
+  const [carouselStyle, setCarouselStyleState] = useState("fan-3d");
+  const [pageAnimation, setPageAnimationState] = useState("fade-blur");
+  const [cursorVariant, setCursorVariantState] = useState("dot-ring");
+  const [fontId,        setFontId]             = useState("editorial");
+  const [darkId,        setDarkId]             = useState("obsidian");
+  const [lightId,       setLightId]            = useState("saffron");
   const [open,  setOpen]  = useState(false);
   const [tab,   setTab]   = useState<"font"|"theme"|"layout"|"motion"|"cards"|"site"|"content"|"presets">("font");
+  // Track whether Supabase has loaded real data yet
+  const layoutLoadedRef = useRef(false);
 
-  // Sync from Supabase once loaded
+  // ── THE FIX ─────────────────────────────────────────────────────────────────
+  // useState(layout.xxx) only reads the value ONCE at mount — at that moment
+  // layout is still DEFAULT_LAYOUT because Supabase hasn't responded yet.
+  // layoutLoaded flips to true once SiteConfigProvider gets the DB response.
   useEffect(() => {
+    if (!layoutLoaded) return; // Supabase hasn't responded yet, don't overwrite
+    layoutLoadedRef.current = true;
     setHeroVariantState(layout.heroVariant);
     setFooterVariantState(layout.footerVariant);
     setCarouselStyleState(layout.carouselStyle);
@@ -109,8 +117,9 @@ export function DebugProvider({ children }: { children: React.ReactNode }) {
     setLightId(layout.lightId);
     applyFontById(layout.fontId);
     applyThemeById(layout.darkId, true);
+    applyThemeById(layout.lightId, false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layout.fontId]);
+  }, [layoutLoaded, layout]);
 
   const persist = (patch: Partial<DebugLayout>) => {
     const next: DebugLayout = {

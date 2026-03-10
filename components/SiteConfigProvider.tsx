@@ -63,6 +63,7 @@ interface SiteConfigCtx {
   saving:          boolean;
   // layout (debug panel state)
   layout:          DebugLayout;
+  layoutLoaded:    boolean;   // true once Supabase has responded
   saveLayout:      (l: DebugLayout) => Promise<void>;
   // presets
   presets:         DebugPreset[];
@@ -121,7 +122,7 @@ export const DEFAULT_CONFIG: SiteConfig = {
 // ── Context ───────────────────────────────────────────────────────────────────
 const Ctx = createContext<SiteConfigCtx>({
   config: DEFAULT_CONFIG, setConfig: () => {}, saveConfig: async () => {}, saving: false,
-  layout: DEFAULT_LAYOUT, saveLayout: async () => {},
+  layout: DEFAULT_LAYOUT, layoutLoaded: false, saveLayout: async () => {},
   presets: [], savePreset: async () => {}, deletePreset: async () => {}, presetsLoading: false,
 });
 export const useSiteConfig = () => useContext(Ctx);
@@ -134,6 +135,7 @@ const PRESETS_KEY = "debug_presets";
 export function SiteConfigProvider({ children }: { children: ReactNode }) {
   const [config, setConfigState]   = useState<SiteConfig>(DEFAULT_CONFIG);
   const [layout, setLayoutState]   = useState<DebugLayout>(DEFAULT_LAYOUT);
+  const [layoutLoaded, setLayoutLoaded] = useState(false);
   const [saving, setSaving]        = useState(false);
   const [presets, setPresets]      = useState<DebugPreset[]>([]);
   const [presetsLoading, setPresetsLoading] = useState(false);
@@ -150,6 +152,8 @@ export function SiteConfigProvider({ children }: { children: ReactNode }) {
         const { data: layRow }  = await supabase.from("site_settings").select("value").eq("key", LAYOUT_KEY).single();
         if (layRow?.value)  setLayoutState(v => ({ ...DEFAULT_LAYOUT, ...(layRow.value as DebugLayout) }));
       } catch {}
+      // Mark layout as loaded regardless — DebugPanel needs to know Supabase responded
+      setLayoutLoaded(true);
 
       setPresetsLoading(true);
       try {
@@ -196,7 +200,7 @@ export function SiteConfigProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={{
       config, setConfig: setConfigState, saveConfig, saving,
-      layout, saveLayout,
+      layout, layoutLoaded, saveLayout,
       presets, savePreset, deletePreset, presetsLoading,
     }}>
       {children}
