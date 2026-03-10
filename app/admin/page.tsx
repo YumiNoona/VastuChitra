@@ -14,7 +14,7 @@ import {
   Send, CheckCircle2, Clock, ArrowRight,
 } from "lucide-react";
 
-const ADMIN_PASSWORD = "archviz2025";
+// Password is checked server-side via /api/admin-auth — never stored in client code
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface Visitor {
@@ -62,8 +62,13 @@ export default function AdminPage() {
     setChecked(true);
   }, []);
 
-  const handleLogin  = (pass: string) => {
-    if (pass === ADMIN_PASSWORD) { sessionStorage.setItem("av_admin","1"); setAuthed(true); return true; }
+  const handleLogin  = async (pass: string) => {
+    const res = await fetch("/api/admin-auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pass }),
+    });
+    if (res.ok) { sessionStorage.setItem("av_admin","1"); setAuthed(true); return true; }
     return false;
   };
   const handleLogout = () => { sessionStorage.removeItem("av_admin"); setAuthed(false); };
@@ -75,15 +80,17 @@ export default function AdminPage() {
 // ══════════════════════════════════════════════════════════════════════════════
 //  LOGIN
 // ══════════════════════════════════════════════════════════════════════════════
-function LoginScreen({ onLogin }: { onLogin: (p: string) => boolean }) {
+function LoginScreen({ onLogin }: { onLogin: (p: string) => Promise<boolean> }) {
   const [pass, setPass]       = useState("");
   const [show, setShow]       = useState(false);
   const [error, setError]     = useState("");
   const [loading, setLoading] = useState(false);
 
-  const submit = () => {
+  const submit = async () => {
     setLoading(true);
-    setTimeout(() => { if (!onLogin(pass)) setError("Incorrect password."); setLoading(false); }, 400);
+    const ok = await onLogin(pass);
+    if (!ok) setError("Incorrect password.");
+    setLoading(false);
   };
 
   return (
@@ -535,11 +542,11 @@ function ProjectsTab() {
                     <Link2 size={11}/>
                     {p.stream_url && !p.stream_url.includes("REPLACE_ME") ? "Stream ready" : "No stream URL"}
                   </div>
-                  <motion.button onClick={() => setDeleteId(p.id)}
-                    className="flex-shrink-0 p-2 rounded-xl transition-colors"
+                  <button onClick={() => setDeleteId(p.id)}
+                    className="flex-shrink-0 p-2 rounded-xl transition-all"
                     style={{ color:"hsl(0 55% 55%/0.6)" }}
-                    whileHover={{ color:"hsl(0 65% 62%)", background:"hsl(0 50% 40%/0.1)" } as React.CSSProperties}
-                    whileTap={{ scale:0.93 }}>
+                    onMouseEnter={e => { e.currentTarget.style.color="hsl(0 65% 62%)"; e.currentTarget.style.background="hsl(0 50% 40%/0.1)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color="hsl(0 55% 55%/0.6)"; e.currentTarget.style.background="transparent"; }}>
                     <Trash2 size={15}/>
                   </motion.button>
                 </div>
