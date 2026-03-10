@@ -548,7 +548,7 @@ function ProjectsTab() {
                     onMouseEnter={e => { e.currentTarget.style.color="hsl(0 65% 62%)"; e.currentTarget.style.background="hsl(0 50% 40%/0.1)"; }}
                     onMouseLeave={e => { e.currentTarget.style.color="hsl(0 55% 55%/0.6)"; e.currentTarget.style.background="transparent"; }}>
                     <Trash2 size={15}/>
-                  </motion.button>
+                  </button>
                 </div>
               </motion.div>
             ))}
