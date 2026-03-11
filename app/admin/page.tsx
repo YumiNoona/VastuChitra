@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   getVisitors, getVisitorStats, getProjects, createProject, updateProject,
   deleteProject, getLinksForProject, createLink, deleteLink,
-  Project, ProjectType, AccessType, ProjectLink,
+  Project, ProjectType, AccessType, ProjectLink, supabase,
 } from "@/lib/supabase";
 import {
   Users, Eye, TrendingUp, Calendar, LogOut, ExternalLink,
@@ -443,6 +443,7 @@ function ProjectsTab() {
   const [projects,   setProjects]   = useState<Project[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [showForm,   setShowForm]   = useState(false);
+  const [editProject,setEditProject]= useState<Project|null>(null);
   const [deleteId,   setDeleteId]   = useState<string|null>(null);
   const [deleting,   setDeleting]   = useState(false);
   const [expandId,   setExpandId]   = useState<string|null>(null);
@@ -504,6 +505,7 @@ function ProjectsTab() {
                 expanded={expandId===p.id}
                 onToggle={() => setExpandId(expandId===p.id ? null : p.id)}
                 onDelete={() => setDeleteId(p.id)}
+                onEdit={() => setEditProject(p)}
                 onUpdate={reload}
               />
             ))}
@@ -513,6 +515,9 @@ function ProjectsTab() {
 
       <AnimatePresence>
         {showForm && <AddProjectModal onClose={() => setShowForm(false)} onCreated={async () => { setShowForm(false); await reload(); }}/>}
+      </AnimatePresence>
+      <AnimatePresence>
+        {editProject && <EditProjectModal project={editProject} onClose={() => setEditProject(null)} onUpdated={async () => { setEditProject(null); await reload(); }}/>}
       </AnimatePresence>
       <AnimatePresence>
         {deleteId && (
@@ -526,9 +531,9 @@ function ProjectsTab() {
 }
 
 // ── Project row with expandable access + links panel ─────────────────────────
-function ProjectRow({ project, index, expanded, onToggle, onDelete, onUpdate }: {
+function ProjectRow({ project, index, expanded, onToggle, onDelete, onEdit, onUpdate }: {
   project: Project; index: number; expanded: boolean;
-  onToggle: ()=>void; onDelete: ()=>void; onUpdate: ()=>void;
+  onToggle: ()=>void; onDelete: ()=>void; onEdit: ()=>void; onUpdate: ()=>void;
 }) {
   return (
     <motion.div className="rounded-2xl border overflow-hidden"
@@ -561,6 +566,13 @@ function ProjectRow({ project, index, expanded, onToggle, onDelete, onUpdate }: 
               style={{ borderColor:"hsl(222 18% 18%)", color:"hsl(38 8% 50%)",
                 background: expanded ? "hsl(38 65% 58%/0.08)" : "transparent" }}>
               {expanded ? <ChevronUp size={12}/> : <ChevronDown size={12}/>} Access
+            </button>
+            <button onClick={onEdit} className="p-2 rounded-xl transition-all"
+              style={{ color:"hsl(38 50% 55%/0.6)" }}
+              title="Edit project"
+              onMouseEnter={e => { e.currentTarget.style.color="hsl(38 65% 62%)"; e.currentTarget.style.background="hsl(38 50% 40%/0.1)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color="hsl(38 50% 55%/0.6)"; e.currentTarget.style.background="transparent"; }}>
+              <Sparkles size={14}/>
             </button>
             <button onClick={onDelete} className="p-2 rounded-xl transition-all"
               style={{ color:"hsl(0 55% 55%/0.5)" }}
@@ -1139,6 +1151,269 @@ function AddProjectModal({ onClose, onCreated }: { onClose:()=>void; onCreated:(
   );
 }
 
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  EDIT PROJECT MODAL
+// ══════════════════════════════════════════════════════════════════════════════
+function EditProjectModal({ project, onClose, onUpdated }: {
+  project: Project; onClose: ()=>void; onUpdated: ()=>void;
+}) {
+  const [title,          setTitle]          = useState(project.title);
+  const [description,    setDescription]    = useState(project.description);
+  const [longDesc,       setLongDesc]       = useState(project.long_description ?? "");
+  const [streamUrl,      setStreamUrl]      = useState(project.stream_url ?? "");
+  const [location,       setLocation]       = useState(project.location);
+  const [year,           setYear]           = useState(project.year);
+  const [type,           setType]           = useState<ProjectType>(project.type);
+  const [featured,       setFeatured]       = useState(project.featured);
+  const [accessType,     setAccessType]     = useState<AccessType>(project.access_type ?? "public");
+  const [accessPassword, setAccessPassword] = useState(project.access_password ?? "");
+  const [saving,         setSaving]         = useState(false);
+  const [error,          setError]          = useState("");
+
+  // Image replacement (optional — keep existing if not replaced)
+  const mainFile  = useRef<File|null>(null);
+  const darkFile  = useRef<File|null>(null);
+  const lightFile = useRef<File|null>(null);
+  const [mainPreview,  setMainPreview]  = useState(project.image_url ?? "");
+  const [darkPreview,  setDarkPreview]  = useState(project.image_url_dark ?? "");
+  const [lightPreview, setLightPreview] = useState(project.image_url_light ?? "");
+  const fileRef      = useRef<HTMLInputElement>(null);
+  const fileDarkRef  = useRef<HTMLInputElement>(null);
+  const fileLightRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = useCallback((file: File, mode: "main"|"dark"|"light") => {
+    if (!file.type.startsWith("image/")) return;
+    const url = URL.createObjectURL(file);
+    if (mode==="main")  { mainFile.current=file;  setMainPreview(p=>{ if(p.startsWith("blob:")) URL.revokeObjectURL(p); return url; }); }
+    if (mode==="dark")  { darkFile.current=file;  setDarkPreview(p=>{ if(p.startsWith("blob:")) URL.revokeObjectURL(p); return url; }); }
+    if (mode==="light") { lightFile.current=file; setLightPreview(p=>{ if(p.startsWith("blob:")) URL.revokeObjectURL(p); return url; }); }
+  }, []);
+
+  const uploadIfNew = async (file: File|null, suffix: string): Promise<string|null> => {
+    if (!file) return null;
+    const ext  = file.name.split(".").pop() ?? "jpg";
+    const path = `${title.toLowerCase().replace(/[^a-z0-9]+/g,"-")}-${Date.now()}${suffix}.${ext}`;
+    const { error } = await supabase.storage.from("project-images").upload(path, file, { upsert:false, contentType:file.type });
+    if (error) return null;
+    const { data } = supabase.storage.from("project-images").getPublicUrl(path);
+    return data.publicUrl;
+  };
+
+  const handleSave = async () => {
+    if (!title || !description || !location) { setError("Name, description and location are required."); return; }
+    setSaving(true); setError("");
+
+    const patch: Partial<Project> = {
+      title, description, long_description: longDesc,
+      stream_url: streamUrl, location, year, type, featured,
+      access_type: accessType,
+      access_password: accessType==="password" ? accessPassword : "",
+    };
+
+    // Upload new images only if selected
+    const newMain  = await uploadIfNew(mainFile.current, "");
+    const newDark  = await uploadIfNew(darkFile.current, "-dark");
+    const newLight = await uploadIfNew(lightFile.current, "-light");
+    if (newMain)  patch.image_url       = newMain;
+    if (newDark)  patch.image_url_dark  = newDark;
+    if (newLight) patch.image_url_light = newLight;
+
+    const { error: err } = await updateProject(project.id, patch);
+    setSaving(false);
+    if (err) { setError(err); return; }
+    onUpdated();
+  };
+
+  return (
+    <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}>
+      <motion.div className="absolute inset-0"
+        style={{ background:"hsl(222 24% 3%/0.85)", backdropFilter:"blur(8px)" }} onClick={onClose}/>
+      <motion.div className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl border"
+        style={{ background:"hsl(222 22% 7%)", borderColor:"hsl(38 50% 40%/0.3)", boxShadow:"0 32px 80px hsl(222 24% 2%/0.7)" }}
+        initial={{ opacity:0, y:24, scale:0.97 }} animate={{ opacity:1, y:0, scale:1 }}
+        exit={{ opacity:0, y:12, scale:0.97 }} transition={{ duration:0.35, ease:[0.16,1,0.3,1] }}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b sticky top-0 z-10"
+          style={{ borderColor:"hsl(222 18% 12%)", background:"hsl(222 22% 7%)" }}>
+          <div>
+            <h2 className="text-lg font-light" style={{ fontFamily:"var(--font-display)", color:"hsl(38 15% 88%)" }}>
+              Edit Project
+            </h2>
+            <p className="text-xs mt-0.5" style={{ color:"hsl(38 8% 44%)" }}>
+              Changes publish instantly — <span style={{ color:"hsl(38 50% 55%)" }}>{project.title}</span>
+            </p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl" style={{ color:"hsl(38 8% 40%)" }}><X size={16}/></button>
+        </div>
+
+        <div className="grid lg:grid-cols-[1fr_260px] gap-0">
+          {/* LEFT — fields */}
+          <div className="p-6 space-y-5 border-r" style={{ borderColor:"hsl(222 18% 12%)" }}>
+
+            {/* Thumbnail replacement */}
+            <div>
+              <label className="block text-xs font-medium uppercase tracking-widest mb-2" style={{ color:"hsl(38 8% 44%)" }}>
+                Thumbnail <span style={{ color:"hsl(38 8% 30%)", fontWeight:400 }}>(click to replace)</span>
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {([
+                  { ref:fileRef,      preview:mainPreview,  mode:"main"  as const, label:"Main"  },
+                  { ref:fileDarkRef,  preview:darkPreview,  mode:"dark"  as const, label:"🌙 Dark"  },
+                  { ref:fileLightRef, preview:lightPreview, mode:"light" as const, label:"☀️ Light" },
+                ]).map(({ ref, preview, mode, label }) => (
+                  <div key={mode}>
+                    <p className="text-[10px] mb-1" style={{ color:"hsl(38 8% 38%)" }}>{label}</p>
+                    <div className="h-20 rounded-xl border border-dashed cursor-pointer overflow-hidden relative"
+                      style={{ borderColor:"hsl(222 18% 20%)", background:"hsl(222 18% 6%)" }}
+                      onClick={() => ref.current?.click()}>
+                      <input ref={ref} type="file" accept="image/*" className="hidden"
+                        onChange={e=>{ const f=e.target.files?.[0]; if(f) handleFile(f,mode); }}/>
+                      {preview
+                        ? <img src={preview} alt="" className="absolute inset-0 w-full h-full object-cover"/>
+                        : <div className="absolute inset-0 flex items-center justify-center" style={{ color:"hsl(38 8% 28%)" }}>
+                            <ImageIcon size={16}/>
+                          </div>
+                      }
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                        style={{ background:"hsl(222 24% 5%/0.7)" }}>
+                        <span className="text-[10px]" style={{ color:"hsl(38 15% 75%)" }}>Replace</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <IField label="Project Name *" icon={<Tag size={11}/>}>
+              <input type="text" value={title} onChange={e=>setTitle(e.target.value)} {...inp}/>
+            </IField>
+            <IField label="Short Description *">
+              <input type="text" value={description} onChange={e=>setDescription(e.target.value)} {...inp}/>
+            </IField>
+            <IField label="Full Description" hint="Launch modal">
+              <textarea value={longDesc} onChange={e=>setLongDesc(e.target.value)}
+                rows={2} {...inp} style={{...inp.style, resize:"vertical"}}/>
+            </IField>
+            <div className="grid grid-cols-2 gap-3">
+              <IField label="Location *" icon={<MapPin size={11}/>}>
+                <input type="text" value={location} onChange={e=>setLocation(e.target.value)} {...inp}/>
+              </IField>
+              <IField label="Year">
+                <input type="text" value={year} onChange={e=>setYear(e.target.value)} {...inp}/>
+              </IField>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <IField label="Type">
+                <select value={type} onChange={e=>setType(e.target.value as ProjectType)} {...inp}>
+                  {["Residential","Commercial","Mixed-Use","Hospitality","Cultural"].map(t=>(
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </IField>
+              <IField label="Featured">
+                <div className="flex items-center gap-3 h-[38px]">
+                  <button onClick={()=>setFeatured(f=>!f)}
+                    className="relative w-10 h-[22px] rounded-full transition-colors"
+                    style={{ background: featured?"hsl(38 65% 58%)":"hsl(222 18% 18%)" }}>
+                    <span className="absolute top-[3px] w-4 h-4 rounded-full transition-all bg-white"
+                      style={{ left: featured?"calc(100% - 19px)":"3px" }}/>
+                  </button>
+                  <span className="text-xs" style={{ color:"hsl(38 8% 50%)" }}>{featured?"Yes":"No"}</span>
+                </div>
+              </IField>
+            </div>
+
+            {/* Access type */}
+            <IField label="Access Type" hint="Applies to all public & private links">
+              <div className="flex gap-2">
+                {(["public","password","otp"] as AccessType[]).map(t=>(
+                  <button key={t} onClick={()=>setAccessType(t)}
+                    className="flex-1 py-2 rounded-xl text-xs font-medium capitalize transition-colors"
+                    style={{
+                      background: accessType===t?"hsl(38 65% 58%)":"hsl(222 18% 12%)",
+                      color: accessType===t?"hsl(222 24% 5%)":"hsl(38 8% 48%)",
+                      border:`1px solid ${accessType===t?"hsl(38 50% 45%)":"hsl(222 18% 18%)"}`,
+                    }}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+              {accessType==="password" && (
+                <input type="text" placeholder="Access password…" value={accessPassword}
+                  onChange={e=>setAccessPassword(e.target.value)} {...inp}
+                  style={{...inp.style, marginTop:8}}/>
+              )}
+            </IField>
+
+            <IField label="🔒 Vagon Stream URL" icon={<Link2 size={11}/>}>
+              <input type="url" placeholder="https://streams.vagon.io/streams/…"
+                value={streamUrl} onChange={e=>setStreamUrl(e.target.value)} {...inp}/>
+            </IField>
+
+            <AnimatePresence>
+              {error && (
+                <motion.div className="flex items-start gap-2 rounded-xl px-4 py-3 text-sm"
+                  style={{ background:"hsl(0 50% 40%/0.1)", border:"1px solid hsl(0 50% 40%/0.25)", color:"hsl(0 65% 62%)" }}
+                  initial={{ opacity:0, y:-4 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}>
+                  <AlertTriangle size={14} className="flex-shrink-0 mt-0.5"/><span>{error}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <motion.button onClick={handleSave} disabled={saving}
+              className="w-full py-3.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+              style={{ background:"hsl(38 65% 58%)", color:"hsl(222 24% 5%)", boxShadow:"0 6px 24px hsl(38 65% 40%/0.2)" }}
+              whileHover={!saving?{y:-1}:{}} whileTap={!saving?{scale:0.98}:{}}>
+              {saving
+                ? <><div className="w-4 h-4 border-2 rounded-full animate-spin"
+                    style={{ borderColor:"hsl(222 24% 20%)", borderTopColor:"hsl(222 24% 5%)"}}/> Saving…</>
+                : <><CheckCircle2 size={14}/> Update Project</>}
+            </motion.button>
+          </div>
+
+          {/* RIGHT — live preview */}
+          <div className="p-6">
+            <p className="text-xs uppercase tracking-widest mb-3" style={{ color:"hsl(38 8% 36%)" }}>Preview</p>
+            <div className="rounded-2xl overflow-hidden border" style={{ background:"hsl(222 20% 9%)", borderColor:"hsl(222 18% 15%)" }}>
+              <div className="relative overflow-hidden" style={{ aspectRatio:"16/9", background:"hsl(222 18% 12%)" }}>
+                {mainPreview
+                  ? <img src={mainPreview} alt="" className="w-full h-full object-cover"/>
+                  : <div className="absolute inset-0 flex items-center justify-center" style={{ color:"hsl(38 8% 30%)" }}>
+                      <ImageIcon size={24}/>
+                    </div>
+                }
+                <div className="absolute inset-0" style={{ background:"linear-gradient(to bottom, transparent 50%, hsl(222 20% 9%/0.85))" }}/>
+                {featured && (
+                  <div className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
+                    style={{ background:"hsl(38 65% 58%)", color:"hsl(222 24% 5%)" }}>
+                    <Sparkles size={8}/> Featured
+                  </div>
+                )}
+              </div>
+              <div className="p-4">
+                <h3 className="font-light mb-1 text-[1.05rem] leading-tight"
+                  style={{ fontFamily:"var(--font-display)", color:"hsl(38 15% 88%)" }}>
+                  {title || "Project title…"}
+                </h3>
+                <p className="text-xs mb-2" style={{ color:"hsl(38 8% 48%)" }}>{description}</p>
+                <div className="flex items-center gap-3 text-[10px]" style={{ color:"hsl(38 8% 38%)" }}>
+                  <span>{location}</span><span>{year}</span>
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 rounded-xl p-3 text-xs space-y-1" style={{ background:"hsl(222 18% 11%)", color:"hsl(38 8% 42%)" }}>
+              <p>Access: <span style={{ color:"hsl(38 45% 55%)" }}>{accessType}</span></p>
+              <p>{streamUrl?"✓":"○"} Stream URL</p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  DELETE CONFIRM MODAL
