@@ -834,93 +834,101 @@ function AccessPanel({ project, onUpdate }: { project: Project; onUpdate: ()=>vo
 // ══════════════════════════════════════════════════════════════════════════════
 //  ADD PROJECT MODAL  — with live card preview + dual images + access defaults
 // ══════════════════════════════════════════════════════════════════════════════
-interface NewProject {
-  title: string; description: string; long_description: string;
-  stream_url: string; type: ProjectType; location: string;
-  year: string; featured: boolean; sort_order: number;
-  imageFile: File | null; imagePreview: string;
-  imageDarkFile: File | null; imageDarkPreview: string;
-  imageLightFile: File | null; imageLightPreview: string;
-  access_type: AccessType; access_password: string;
+// ── MiniDrop — defined OUTSIDE modal so it never remounts on parent re-render ─
+function MiniDrop({ refEl, label, preview, mode, onFile }: {
+  refEl: React.RefObject<HTMLInputElement>;
+  label: string; preview: string; mode: "dark"|"light";
+  onFile: (f: File, mode: "dark"|"light") => void;
+}) {
+  return (
+    <div>
+      <label className="block text-xs mb-1.5" style={{ color:"hsl(38 8% 42%)" }}>{label}</label>
+      <div className="h-20 rounded-xl border-2 border-dashed cursor-pointer overflow-hidden relative flex items-center justify-center"
+        style={{ borderColor: preview ? "hsl(38 50% 40%/0.5)" : "hsl(222 18% 18%)", background:"hsl(222 18% 6%)" }}
+        onClick={() => refEl.current?.click()}>
+        <input ref={refEl} type="file" accept="image/*" className="hidden"
+          onChange={e => { const f=e.target.files?.[0]; if(f) onFile(f, mode); }}/>
+        {preview
+          ? <img src={preview} alt="" className="absolute inset-0 w-full h-full object-cover"/>
+          : <div className="flex flex-col items-center gap-1" style={{ color:"hsl(38 8% 32%)" }}>
+              {mode==="dark" ? <Moon size={16}/> : <Sun size={16}/>}
+              <span className="text-[10px]">Click to upload</span>
+            </div>
+        }
+      </div>
+    </div>
+  );
 }
 
-const BLANK: NewProject = {
-  title: "", description: "", long_description: "", stream_url: "",
-  type: "Residential", location: "", year: new Date().getFullYear().toString(),
-  featured: false, sort_order: 0,
-  imageFile: null, imagePreview: "",
-  imageDarkFile: null, imageDarkPreview: "",
-  imageLightFile: null, imageLightPreview: "",
-  access_type: "public", access_password: "",
-};
-
 function AddProjectModal({ onClose, onCreated }: { onClose:()=>void; onCreated:()=>void }) {
-  const [form, setForm]         = useState<NewProject>({...BLANK});
-  const [dragging, setDragging] = useState(false);
-  const [saving, setSaving]     = useState(false);
-  const [error, setError]       = useState("");
+  // ── Text fields — separate state so each input only re-renders itself ────────
+  const [title,           setTitle]           = useState("");
+  const [description,     setDescription]     = useState("");
+  const [longDescription, setLongDescription] = useState("");
+  const [streamUrl,       setStreamUrl]       = useState("");
+  const [location,        setLocation]        = useState("");
+  const [year,            setYear]            = useState(new Date().getFullYear().toString());
+  const [type,            setType]            = useState<ProjectType>("Residential");
+  const [featured,        setFeatured]        = useState(false);
+  const [accessType,      setAccessType]      = useState<AccessType>("public");
+  const [accessPassword,  setAccessPassword]  = useState("");
+  const [dragging,        setDragging]        = useState(false);
+  const [saving,          setSaving]          = useState(false);
+  const [error,           setError]           = useState("");
+
+  // ── Files stored in refs — NO state, zero re-renders on file pick ────────────
+  const mainFile  = useRef<File|null>(null);
+  const darkFile  = useRef<File|null>(null);
+  const lightFile = useRef<File|null>(null);
+
+  // ── Previews use object URLs — instant, no base64 encoding lag ──────────────
+  const [mainPreview,  setMainPreview]  = useState("");
+  const [darkPreview,  setDarkPreview]  = useState("");
+  const [lightPreview, setLightPreview] = useState("");
+
   const fileRef      = useRef<HTMLInputElement>(null);
   const fileDarkRef  = useRef<HTMLInputElement>(null);
   const fileLightRef = useRef<HTMLInputElement>(null);
 
-  const set = (k: keyof NewProject, v: NewProject[keyof NewProject]) =>
-    setForm(f => ({...f, [k]:v}));
+  // Revoke object URLs on unmount to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      if (mainPreview)  URL.revokeObjectURL(mainPreview);
+      if (darkPreview)  URL.revokeObjectURL(darkPreview);
+      if (lightPreview) URL.revokeObjectURL(lightPreview);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleFile = useCallback((file: File, mode: "main"|"dark"|"light") => {
     if (!file.type.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      const r = e.target?.result as string;
-      if (mode === "main")  { set("imageFile", file);      set("imagePreview", r); }
-      if (mode === "dark")  { set("imageDarkFile", file);  set("imageDarkPreview", r); }
-      if (mode === "light") { set("imageLightFile", file); set("imageLightPreview", r); }
-    };
-    reader.readAsDataURL(file);
+    const url = URL.createObjectURL(file); // instant — no FileReader needed
+    if (mode === "main")  { mainFile.current  = file; setMainPreview(prev  => { URL.revokeObjectURL(prev);  return url; }); }
+    if (mode === "dark")  { darkFile.current  = file; setDarkPreview(prev  => { URL.revokeObjectURL(prev);  return url; }); }
+    if (mode === "light") { lightFile.current = file; setLightPreview(prev => { URL.revokeObjectURL(prev); return url; }); }
   }, []);
 
-  const onDrop = (e: React.DragEvent) => {
+  const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault(); setDragging(false);
     const file = e.dataTransfer.files[0]; if (file) handleFile(file, "main");
-  };
+  }, [handleFile]);
 
-  const isValid = form.title && form.description && form.location && form.imageFile;
+  const isValid = title && description && location && mainFile.current;
 
   const handleSubmit = async () => {
-    if (!isValid || !form.imageFile) return;
+    if (!mainFile.current) return;
     setSaving(true); setError("");
     const { error: err } = await createProject(
-      { title:form.title, description:form.description, long_description:form.long_description,
-        stream_url:form.stream_url, type:form.type, location:form.location,
-        year:form.year, featured:form.featured, sort_order:Date.now(),
-        access_type:form.access_type, access_password:form.access_password },
-      form.imageFile,
-      form.imageDarkFile,
-      form.imageLightFile,
+      { title, description, long_description: longDescription,
+        stream_url: streamUrl, type, location, year,
+        featured, sort_order: Date.now(),
+        access_type: accessType, access_password: accessPassword },
+      mainFile.current,
+      darkFile.current,
+      lightFile.current,
     );
     if (err) { setError(err); setSaving(false); return; }
     onCreated();
-  };
-
-  const MiniDrop = ({ mode, label, preview }: { mode:"dark"|"light"; label:string; preview:string }) => {
-    const ref = mode === "dark" ? fileDarkRef : fileLightRef;
-    return (
-      <div>
-        <label className="block text-xs mb-1.5" style={{ color:"hsl(38 8% 42%)" }}>{label}</label>
-        <div className="h-20 rounded-xl border-2 border-dashed cursor-pointer overflow-hidden relative flex items-center justify-center"
-          style={{ borderColor: preview ? "hsl(38 50% 40%/0.5)" : "hsl(222 18% 18%)", background:"hsl(222 18% 6%)" }}
-          onClick={() => ref.current?.click()}>
-          <input ref={ref} type="file" accept="image/*" className="hidden"
-            onChange={e => { const f=e.target.files?.[0]; if(f) handleFile(f, mode); }}/>
-          {preview
-            ? <img src={preview} alt="" className="absolute inset-0 w-full h-full object-cover"/>
-            : <div className="flex flex-col items-center gap-1" style={{ color:"hsl(38 8% 32%)" }}>
-                {mode==="dark" ? <Moon size={16}/> : <Sun size={16}/>}
-                <span className="text-[10px]">Click to upload</span>
-              </div>
-          }
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -943,27 +951,27 @@ function AddProjectModal({ onClose, onCreated }: { onClose:()=>void; onCreated:(
         </div>
 
         <div className="grid lg:grid-cols-[1fr_280px] gap-0">
-          {/* LEFT */}
+          {/* LEFT — form */}
           <div className="p-6 space-y-5 border-r" style={{ borderColor:"hsl(222 18% 12%)" }}>
 
-            {/* Main image */}
+            {/* Main image drop */}
             <div>
               <label className="block text-xs font-medium uppercase tracking-widest mb-2" style={{ color:"hsl(38 8% 44%)" }}>
                 Main Thumbnail *
               </label>
-              <div className="rounded-xl border-2 border-dashed transition-all cursor-pointer overflow-hidden"
+              <div className="rounded-xl border-2 border-dashed transition-colors cursor-pointer overflow-hidden"
                 style={{ borderColor: dragging ? "hsl(38 65% 58%)" : "hsl(222 18% 18%)", background: dragging ? "hsl(38 65% 58%/0.05)" : "hsl(222 18% 6%)" }}
                 onDragOver={e => { e.preventDefault(); setDragging(true); }}
                 onDragLeave={() => setDragging(false)} onDrop={onDrop}
                 onClick={() => fileRef.current?.click()}>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden"
                   onChange={e => { const f=e.target.files?.[0]; if(f) handleFile(f,"main"); }}/>
-                {form.imagePreview ? (
+                {mainPreview ? (
                   <div className="relative h-36">
-                    <img src={form.imagePreview} alt="" className="w-full h-full object-cover"/>
+                    <img src={mainPreview} alt="" className="w-full h-full object-cover"/>
                     <button className="absolute top-2 right-2 p-1.5 rounded-lg z-10"
                       style={{ background:"hsl(0 50% 40%/0.8)", color:"white" }}
-                      onClick={e => { e.stopPropagation(); set("imageFile",null); set("imagePreview",""); }}>
+                      onClick={e => { e.stopPropagation(); mainFile.current=null; setMainPreview(p => { URL.revokeObjectURL(p); return ""; }); }}>
                       <Trash2 size={11}/>
                     </button>
                     <div className="absolute bottom-0 inset-x-0 py-1 px-3 text-[11px]"
@@ -979,43 +987,44 @@ function AddProjectModal({ onClose, onCreated }: { onClose:()=>void; onCreated:(
               </div>
             </div>
 
-            {/* Theme-specific images */}
+            {/* Theme thumbnails */}
             <div>
               <label className="block text-xs font-medium uppercase tracking-widest mb-2" style={{ color:"hsl(38 8% 44%)" }}>
-                Theme Thumbnails <span style={{ color:"hsl(38 8% 30%)", fontWeight:400 }}>(optional — override main by mode)</span>
+                Theme Thumbnails <span style={{ color:"hsl(38 8% 30%)", fontWeight:400 }}>(optional)</span>
               </label>
               <div className="grid grid-cols-2 gap-3">
-                <MiniDrop mode="dark"  label="🌙 Dark mode image"  preview={form.imageDarkPreview}/>
-                <MiniDrop mode="light" label="☀️ Light mode image" preview={form.imageLightPreview}/>
+                <MiniDrop refEl={fileDarkRef}  label="🌙 Dark mode"  preview={darkPreview}  mode="dark"  onFile={handleFile}/>
+                <MiniDrop refEl={fileLightRef} label="☀️ Light mode" preview={lightPreview} mode="light" onFile={handleFile}/>
               </div>
             </div>
 
+            {/* Text fields — each is its own controlled input, no shared form object */}
             <IField label="Project Name *" icon={<Tag size={11}/>}>
-              <input type="text" placeholder="e.g. Zenith Tower" value={form.title}
-                onChange={e => set("title",e.target.value)} {...inp}/>
+              <input type="text" placeholder="e.g. Zenith Tower" value={title}
+                onChange={e => setTitle(e.target.value)} {...inp}/>
             </IField>
             <IField label="Short Description *" hint="One line on the card">
               <input type="text" placeholder="e.g. 48-floor luxury residential tower…"
-                value={form.description} onChange={e => set("description",e.target.value)} {...inp}/>
+                value={description} onChange={e => setDescription(e.target.value)} {...inp}/>
             </IField>
             <IField label="Full Description" hint="Shown in launch modal">
               <textarea placeholder="Walk visitors through the experience…"
-                value={form.long_description} onChange={e => set("long_description",e.target.value)}
+                value={longDescription} onChange={e => setLongDescription(e.target.value)}
                 rows={2} {...inp} style={{...inp.style, resize:"vertical"}}/>
             </IField>
             <div className="grid grid-cols-2 gap-3">
               <IField label="Location *" icon={<MapPin size={11}/>}>
-                <input type="text" placeholder="Dubai, UAE" value={form.location}
-                  onChange={e => set("location",e.target.value)} {...inp}/>
+                <input type="text" placeholder="Dubai, UAE" value={location}
+                  onChange={e => setLocation(e.target.value)} {...inp}/>
               </IField>
               <IField label="Year">
-                <input type="text" placeholder="2025" value={form.year}
-                  onChange={e => set("year",e.target.value)} {...inp}/>
+                <input type="text" placeholder="2025" value={year}
+                  onChange={e => setYear(e.target.value)} {...inp}/>
               </IField>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <IField label="Type">
-                <select value={form.type} onChange={e => set("type",e.target.value as ProjectType)} {...inp}>
+                <select value={type} onChange={e => setType(e.target.value as ProjectType)} {...inp}>
                   {["Residential","Commercial","Mixed-Use","Hospitality","Cultural"].map(t => (
                     <option key={t} value={t}>{t}</option>
                   ))}
@@ -1023,44 +1032,44 @@ function AddProjectModal({ onClose, onCreated }: { onClose:()=>void; onCreated:(
               </IField>
               <IField label="Featured">
                 <div className="flex items-center gap-3 h-[38px]">
-                  <button onClick={() => set("featured",!form.featured)}
-                    className="relative w-10 h-[22px] rounded-full transition-all"
-                    style={{ background: form.featured ? "hsl(38 65% 58%)" : "hsl(222 18% 18%)" }}>
+                  <button onClick={() => setFeatured(f => !f)}
+                    className="relative w-10 h-[22px] rounded-full transition-colors"
+                    style={{ background: featured ? "hsl(38 65% 58%)" : "hsl(222 18% 18%)" }}>
                     <span className="absolute top-[3px] w-4 h-4 rounded-full transition-all bg-white"
-                      style={{ left: form.featured ? "calc(100% - 19px)" : "3px" }}/>
+                      style={{ left: featured ? "calc(100% - 19px)" : "3px" }}/>
                   </button>
                   <span className="text-xs" style={{ color:"hsl(38 8% 50%)" }}>
-                    {form.featured ? "Yes — badge shown" : "No"}
+                    {featured ? "Yes — badge shown" : "No"}
                   </span>
                 </div>
               </IField>
             </div>
 
-            {/* Access type */}
+            {/* Access */}
             <IField label="Default Access" hint="Can be changed per-link later">
               <div className="flex gap-2">
                 {(["public","password","otp"] as AccessType[]).map(t => (
-                  <button key={t} onClick={() => set("access_type",t)}
-                    className="flex-1 py-2 rounded-xl text-xs font-medium capitalize transition-all"
+                  <button key={t} onClick={() => setAccessType(t)}
+                    className="flex-1 py-2 rounded-xl text-xs font-medium capitalize transition-colors"
                     style={{
-                      background: form.access_type===t ? "hsl(38 65% 58%)" : "hsl(222 18% 12%)",
-                      color: form.access_type===t ? "hsl(222 24% 5%)" : "hsl(38 8% 48%)",
-                      border:`1px solid ${form.access_type===t ? "hsl(38 50% 45%)" : "hsl(222 18% 18%)"}`,
+                      background: accessType===t ? "hsl(38 65% 58%)" : "hsl(222 18% 12%)",
+                      color: accessType===t ? "hsl(222 24% 5%)" : "hsl(38 8% 48%)",
+                      border:`1px solid ${accessType===t ? "hsl(38 50% 45%)" : "hsl(222 18% 18%)"}`,
                     }}>
                     {t}
                   </button>
                 ))}
               </div>
-              {form.access_type === "password" && (
-                <input type="text" placeholder="Set password…" value={form.access_password}
-                  onChange={e => set("access_password",e.target.value)} {...inp}
+              {accessType === "password" && (
+                <input type="text" placeholder="Set password…" value={accessPassword}
+                  onChange={e => setAccessPassword(e.target.value)} {...inp}
                   style={{...inp.style, marginTop:8}}/>
               )}
             </IField>
 
             <IField label="🔒 Vagon Stream URL" hint="Admin-only" icon={<Link2 size={11}/>}>
               <input type="url" placeholder="https://streams.vagon.io/streams/…"
-                value={form.stream_url} onChange={e => set("stream_url",e.target.value)} {...inp}/>
+                value={streamUrl} onChange={e => setStreamUrl(e.target.value)} {...inp}/>
             </IField>
 
             <AnimatePresence>
@@ -1084,45 +1093,44 @@ function AddProjectModal({ onClose, onCreated }: { onClose:()=>void; onCreated:(
             </motion.button>
           </div>
 
-          {/* RIGHT — preview */}
+          {/* RIGHT — static preview, only re-renders when preview URLs or title/desc changes */}
           <div className="p-6">
-            <p className="text-xs uppercase tracking-widest mb-3" style={{ color:"hsl(38 8% 36%)" }}>Live Preview</p>
+            <p className="text-xs uppercase tracking-widest mb-3" style={{ color:"hsl(38 8% 36%)" }}>Preview</p>
             <div className="rounded-2xl overflow-hidden border" style={{ background:"hsl(222 20% 9%)", borderColor:"hsl(222 18% 15%)" }}>
               <div className="relative overflow-hidden" style={{ aspectRatio:"16/9", background:"hsl(222 18% 12%)" }}>
-                {form.imagePreview
-                  ? <img src={form.imagePreview} alt="" className="w-full h-full object-cover"/>
+                {mainPreview
+                  ? <img src={mainPreview} alt="" className="w-full h-full object-cover"/>
                   : <div className="absolute inset-0 flex flex-col items-center justify-center gap-2" style={{ color:"hsl(38 8% 30%)" }}>
                       <ImageIcon size={24}/><span className="text-xs">Image preview</span>
                     </div>
                 }
                 <div className="absolute inset-0" style={{ background:"linear-gradient(to bottom, transparent 50%, hsl(222 20% 9%/0.85))" }}/>
-                {form.featured && (
+                {featured && (
                   <div className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
                     style={{ background:"hsl(38 65% 58%)", color:"hsl(222 24% 5%)" }}>
                     <Sparkles size={8}/> Featured
                   </div>
                 )}
-                <AccessBadge type={form.access_type}/>
               </div>
               <div className="p-4">
                 <h3 className="font-light mb-1 leading-tight" style={{ fontFamily:"var(--font-display)", fontSize:"1.05rem", color:"hsl(38 15% 88%)" }}>
-                  {form.title || <span style={{ color:"hsl(38 8% 30%)" }}>Project title…</span>}
+                  {title || <span style={{ color:"hsl(38 8% 30%)" }}>Project title…</span>}
                 </h3>
                 <p className="text-xs leading-relaxed mb-3" style={{ color:"hsl(38 8% 48%)" }}>
-                  {form.description || <span style={{ color:"hsl(38 8% 28%)" }}>Short description…</span>}
+                  {description || <span style={{ color:"hsl(38 8% 28%)" }}>Short description…</span>}
                 </p>
                 <div className="flex items-center gap-3 text-[10px]" style={{ color:"hsl(38 8% 38%)" }}>
-                  <span>{form.location || "Location"}</span>
-                  <span>{form.year}</span>
+                  <span>{location || "Location"}</span>
+                  <span>{year}</span>
                 </div>
               </div>
             </div>
             <div className="mt-4 rounded-xl p-3 text-xs space-y-1" style={{ background:"hsl(222 18% 11%)", color:"hsl(38 8% 42%)" }}>
-              <p>{form.imageFile ? "✓" : "○"} Main thumbnail</p>
-              <p>{form.imageDarkFile ? "✓" : "○"} Dark mode image</p>
-              <p>{form.imageLightFile ? "✓" : "○"} Light mode image</p>
-              <p>{form.stream_url ? "✓" : "○"} Vagon stream URL</p>
-              <p>Access: <span style={{ color:"hsl(38 45% 55%)" }}>{form.access_type}</span></p>
+              <p>{mainPreview  ? "✓" : "○"} Main thumbnail</p>
+              <p>{darkPreview  ? "✓" : "○"} Dark mode image</p>
+              <p>{lightPreview ? "✓" : "○"} Light mode image</p>
+              <p>{streamUrl    ? "✓" : "○"} Vagon stream URL</p>
+              <p>Access: <span style={{ color:"hsl(38 45% 55%)" }}>{accessType}</span></p>
             </div>
           </div>
         </div>
@@ -1130,6 +1138,7 @@ function AddProjectModal({ onClose, onCreated }: { onClose:()=>void; onCreated:(
     </motion.div>
   );
 }
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  DELETE CONFIRM MODAL
