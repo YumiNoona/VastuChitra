@@ -6,7 +6,7 @@
 
 Built with Next.js 14 · Supabase · Framer Motion · Vercel
 
-[Live Site]([https://vastuchitra.vercel.app](https://archviz-ook88r84k-veilafk.vercel.app/))
+[Live Site](https://archviz-ook88r84k-veilafk.vercel.app/)
 
 </div>
 
