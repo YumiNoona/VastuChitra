@@ -6,7 +6,7 @@
 
 Built with Next.js 14 · Supabase · Framer Motion · Vercel
 
-[Live Site](https://vastuchitra.vercel.app) · [Admin Panel](/admin) · [Manual](./MANUAL.docx)
+[Live Site]([https://vastuchitra.vercel.app](https://archviz-ook88r84k-veilafk.vercel.app/))
 
 </div>
 
@@ -127,12 +127,6 @@ VONAGE_SENDER_ID=
 EMAIL_FROM=noreply@yourdomain.com
 ```
 
-Generate `ADMIN_PASSWORD_HASH`:
-```bash
-echo -n 'your-password' | sha256sum
-```
-
----
 
 ## Setup
 
@@ -162,28 +156,6 @@ npm run dev
 
 ---
 
-## Admin Panel
-
-Visit `/admin` — enter your password. From there:
-
-- **Projects tab** — add, edit, delete, reorder projects. Set access type per project. Generate private client links.
-- **Visitors tab** — view lead capture data and per-project stats.
-- **Site Config tab** — edit all brand text, hero copy, contact details, and card hover effect. Saves to Supabase — live instantly.
-- **Debug tab** — change fonts, colour themes, hero layout, carousel style, cursor variant. All saved to Supabase.
-
----
-
-## Private Client Links
-
-From the Admin → Projects → expand a project → Private Links panel:
-
-- Enter client name, email, optional note, optional expiry date → **Generate Link**
-- Share the `/p/[token]` URL with your client
-- The page shows only their project with the same access control as the main site
-- Expired tokens show a clean error page
-
----
-
 ## Customisation
 
 | What | Where |
@@ -199,5 +171,5 @@ From the Admin → Projects → expand a project → Private Links panel:
 ---
 
 <div align="center">
-<sub>VastuChitra ArchViz · Built with Next.js 14 + Supabase + Vercel</sub>
+<sub>VastuChitra ArchViz · Built with Next.js 14 + Supabase + Vercel · Made By VeilAFK (YumiNoona)</sub>
 </div>
