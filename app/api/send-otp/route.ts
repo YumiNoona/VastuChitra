@@ -12,8 +12,13 @@ async function sendViaTwilio(to: string, code: string, projectTitle: string): Pr
   const from  = process.env.TWILIO_PHONE_NUMBER;
   if (!sid || !token || !from) return false;
 
-  // to must be in E.164 format e.g. +919876543210
-  const phone = to.startsWith("+") ? to : `+${to}`;
+  // Normalize to E.164 — handle Indian 10-digit numbers automatically
+  let phone = to.replace(/\s+/g, "").replace(/-/g, "");
+  if (!phone.startsWith("+")) {
+    // 10-digit Indian number → add +91
+    if (phone.length === 10) phone = `+91${phone}`;
+    else phone = `+${phone}`;
+  }
 
   const body = `Your VastuChitra access code for ${projectTitle}: ${code}\nValid 10 mins. Do not share.`;
 
@@ -44,7 +49,9 @@ async function sendViaVonage(to: string, code: string, projectTitle: string): Pr
   if (!apiKey || !apiSecret) return false;
 
   // Vonage wants number without + prefix e.g. 919876543210
-  const phone = to.startsWith("+") ? to.slice(1) : to;
+  let phone = to.replace(/\s+/g, "").replace(/-/g, "");
+  if (phone.startsWith("+")) phone = phone.slice(1);
+  else if (phone.length === 10) phone = `91${phone}`; // bare Indian number
 
   const text = `Your VastuChitra access code for ${projectTitle}: ${code}. Valid 10 mins.`;
 
