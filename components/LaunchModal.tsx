@@ -166,7 +166,7 @@ export default function LaunchModal({ project, onClose }: Props) {
           style={{ background:"hsl(222 24% 3%/0.8)", backdropFilter:"blur(12px)" }}
           initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}/>
 
-        <motion.div className="relative w-full max-w-[460px] rounded-[2rem] border overflow-hidden"
+        <motion.div className="relative w-full max-w-[560px] rounded-[2rem] border overflow-hidden"
           layout
           style={{ background:"rgba(10, 10, 10, 0.9)", borderColor:"rgba(255, 255, 255, 0.1)", boxShadow:"0 32px 80px rgba(0,0,0,0.8)", backdropFilter:"blur(20px)" }}
           initial={{ scale:0.88, opacity:0, y:20, filter:"blur(8px)" }}
@@ -190,12 +190,12 @@ export default function LaunchModal({ project, onClose }: Props) {
 
             {/* ── INSTRUCTIONS ──────────────────────────────────────── */}
             {stage==="instructions" && (
-              <motion.div key="instructions" className="p-8"
+              <motion.div key="instructions" className="p-9"
                 initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-20 }}>
-                <h2 className="text-xl font-medium tracking-tight mb-4 text-white">Before you start</h2>
+                <h2 className="text-2xl font-medium tracking-tight mb-5 text-white">Before you start</h2>
                 
                 <div className="p-4 rounded-2xl mb-6" style={{ background:"hsl(38 20% 15%)", border:"1px solid hsl(38 30% 25%)" }}>
-                  <p className="text-xs leading-relaxed" style={{ color:"rgba(255,255,255,0.8)" }}>
+                  <p className="text-sm leading-relaxed" style={{ color:"rgba(255,255,255,0.8)" }}>
                     <strong className="text-white mb-1.5 block">Session Notice</strong>
                     These immersive experiences run on high-performance cloud GPUs. To manage costs and ensure availability, 
                     <span style={{ color:VASTU_GREEN }}> each session is limited to 15 minutes</span>. Inactive sessions will be disconnected.
@@ -205,7 +205,7 @@ export default function LaunchModal({ project, onClose }: Props) {
                 <InstructionsTabs />
 
                 <motion.button onClick={finishLaunch}
-                  className="w-full mt-8 py-4 rounded-full text-xs font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-colors shadow-2xl shadow-vastu-green/10"
+                  className="w-full mt-8 py-4 rounded-full text-sm font-bold uppercase tracking-[0.18em] flex items-center justify-center gap-3 transition-colors shadow-2xl shadow-vastu-green/10"
                   style={{ background:VASTU_GREEN, color:"#000000" }}
                   whileHover={{ scale: 1.02 }} whileTap={{ scale:0.98 }}>
                   I Understand, Start Stream <ArrowRight size={14}/>
@@ -497,20 +497,20 @@ function InstructionsTabs() {
         </button>
       </div>
 
-      <div className="space-y-3 min-h-[160px]">
+      <div className="space-y-3 min-h-[220px]">
         {tab === "desktop" ? (
           <>
-             <ControlRow label="Look Around" desc="Left Click + Drag" />
-             <ControlRow label="Move/Walk" desc="W, A, S, D Keys or Arrows" />
-             <ControlRow label="Interact" desc="Single Left Click" />
+             <ControlRow label="Look Around" desc="Left Mouse Button + Drag" />
+             <ControlRow label="Move / Walk" desc="W / A / S / D or Arrow Keys" />
+             <ControlRow label="Interact / Select" desc="Left Click" />
              <ControlRow label="Zoom" desc="Mouse Scroll Wheel" />
+             <ControlRow label="Orbit" desc="Right Mouse Button + Drag" />
           </>
         ) : (
           <>
              <ControlRow label="Look Around" desc="One Finger Drag" />
-             <ControlRow label="Move/Walk" desc="On-screen Joystick (bottom left)" />
-             <ControlRow label="Interact" desc="Single Tap" />
-             <ControlRow label="Menu/Settings" desc="Three Fingers Tap" />
+             <ControlRow label="Interact / Select" desc="Single Tap" />
+             <ControlRow label="Zoom" desc="Pinch Gesture" />
           </>
         )}
       </div>
@@ -520,9 +520,9 @@ function InstructionsTabs() {
 
 function ControlRow({ label, desc }: { label:string; desc:string }) {
   return (
-    <div className="flex justify-between items-center py-2.5 border-b border-white/5 last:border-0">
-      <span className="text-xs font-medium text-white/80">{label}</span>
-      <span className="text-[11px] text-white/60 bg-white/5 px-2.5 py-1.5 rounded-md border border-white/5">{desc}</span>
+    <div className="flex justify-between items-center gap-3 py-3 border-b border-white/5 last:border-0">
+      <span className="text-sm font-medium text-white/85">{label}</span>
+      <span className="text-xs text-white/65 bg-white/5 px-3 py-1.5 rounded-md border border-white/5 whitespace-nowrap">{desc}</span>
     </div>
   );
 }

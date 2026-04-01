@@ -372,7 +372,7 @@ function LaunchModal({ project, auth, clientEmail, onClose, isDark }: {
       style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)" }}
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <motion.div className="w-full max-w-sm rounded-2xl border p-7 max-h-[90vh] overflow-y-auto no-scrollbar"
+      <motion.div className="w-full max-w-[560px] rounded-2xl border p-7 max-h-[90vh] overflow-y-auto no-scrollbar"
         style={{ background: crd, borderColor: bdr }}
         initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}>
 
@@ -493,16 +493,16 @@ function LaunchModal({ project, auth, clientEmail, onClose, isDark }: {
         ) : step === "instructions" ? (
           <div>
             <div className="mb-5">
-              <h3 className="font-light text-base" style={{ color: fg, fontFamily: "Georgia, serif" }}>
+              <h3 className="font-light text-xl" style={{ color: fg, fontFamily: "Georgia, serif" }}>
                 Before you start
               </h3>
-              <p className="text-xs mt-0.5" style={{ color: sub }}>
+              <p className="text-sm mt-1" style={{ color: sub }}>
                 Quick guide to navigate the project stream.
               </p>
             </div>
 
             <div className="p-3 rounded-xl mb-4 border" style={{ background: isDark ? "hsl(38 20% 12%)" : "hsl(38 45% 88%)", borderColor: bdr }}>
-              <p className="text-xs leading-relaxed" style={{ color: fg }}>
+              <p className="text-sm leading-relaxed" style={{ color: fg }}>
                 <strong className="block mb-1">Session Notice</strong>
                 Each cloud GPU session lasts <span style={{ color: "#e2ffaf", fontWeight: 600 }}>15 minutes</span>. Inactive sessions may disconnect automatically.
               </p>
@@ -512,7 +512,7 @@ function LaunchModal({ project, auth, clientEmail, onClose, isDark }: {
 
             <motion.button
               onClick={executeLaunch}
-              className="w-full mt-5 py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2"
+              className="w-full mt-5 py-4 rounded-xl text-xs font-bold uppercase tracking-[0.18em] flex items-center justify-center gap-2"
               style={{ background: "#e2ffaf", color: "#000" }}
               whileHover={{ y: -1, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -569,20 +569,20 @@ function InstructionTabs({ isDark }: { isDark: boolean }) {
         </button>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 min-h-[220px]">
         {tab === "desktop" ? (
           <>
-            <InstructionRow label="Look Around" value="Left click + drag" fg={fg} sub={sub} bdr={bdr} />
-            <InstructionRow label="Move / Walk" value="W A S D or Arrow keys" fg={fg} sub={sub} bdr={bdr} />
-            <InstructionRow label="Interact" value="Single left click" fg={fg} sub={sub} bdr={bdr} />
-            <InstructionRow label="Zoom" value="Mouse wheel" fg={fg} sub={sub} bdr={bdr} />
+            <InstructionRow label="Look Around" value="Left Mouse Button + Drag" fg={fg} sub={sub} bdr={bdr} />
+            <InstructionRow label="Move / Walk" value="W / A / S / D or Arrow Keys" fg={fg} sub={sub} bdr={bdr} />
+            <InstructionRow label="Interact / Select" value="Left Click" fg={fg} sub={sub} bdr={bdr} />
+            <InstructionRow label="Zoom" value="Mouse Scroll Wheel" fg={fg} sub={sub} bdr={bdr} />
+            <InstructionRow label="Orbit" value="Right Mouse Button + Drag" fg={fg} sub={sub} bdr={bdr} />
           </>
         ) : (
           <>
-            <InstructionRow label="Look Around" value="One-finger drag" fg={fg} sub={sub} bdr={bdr} />
-            <InstructionRow label="Move / Walk" value="On-screen joystick" fg={fg} sub={sub} bdr={bdr} />
-            <InstructionRow label="Interact" value="Single tap" fg={fg} sub={sub} bdr={bdr} />
-            <InstructionRow label="Menu / Settings" value="Three-finger tap" fg={fg} sub={sub} bdr={bdr} />
+            <InstructionRow label="Look Around" value="One Finger Drag" fg={fg} sub={sub} bdr={bdr} />
+            <InstructionRow label="Interact / Select" value="Single Tap" fg={fg} sub={sub} bdr={bdr} />
+            <InstructionRow label="Zoom" value="Pinch Gesture" fg={fg} sub={sub} bdr={bdr} />
           </>
         )}
       </div>
@@ -604,9 +604,9 @@ function InstructionRow({
   bdr: string;
 }) {
   return (
-    <div className="flex items-center justify-between py-2 border-b last:border-0" style={{ borderColor: bdr }}>
-      <span className="text-xs" style={{ color: fg }}>{label}</span>
-      <span className="text-[11px] px-2 py-1 rounded-md" style={{ color: sub, border: `1px solid ${bdr}` }}>
+    <div className="flex items-center justify-between gap-3 py-3 border-b last:border-0" style={{ borderColor: bdr }}>
+      <span className="text-sm" style={{ color: fg }}>{label}</span>
+      <span className="text-xs px-3 py-1.5 rounded-md whitespace-nowrap" style={{ color: sub, border: `1px solid ${bdr}` }}>
         {value}
       </span>
     </div>
