@@ -12,9 +12,15 @@ function useToken() {
   return window.location.pathname.split("/p/")[1] ?? "";
 }
 
+function useCleanMode() {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("clean") === "1";
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function PrivateLinkPage() {
   const token = useToken();
+  const clean = useCleanMode();
   const [project, setProject] = useState<Project | null>(null);
   const [auth,    setAuth]    = useState<ProjectAuth | null>(null);
   const [status,  setStatus]  = useState<"loading"|"not-found"|"granted">("loading");
@@ -33,7 +39,7 @@ export default function PrivateLinkPage() {
   if (status === "loading") return <Loader />;
   if (status === "not-found") return <NotFound />;
   
-  return <ProjectView project={project!} auth={auth!} />;
+  return <ProjectView project={project!} auth={auth!} clean={clean} />;
 }
 
 // ── Loader ────────────────────────────────────────────────────────────────────
@@ -116,7 +122,7 @@ function OtpInput({ value, onChange }: { value: string; onChange: (v: string) =>
 }
 
 // ── Project View — what the client actually sees ───────────────────────────────
-function ProjectView({ project, auth }: { project: Project; auth: ProjectAuth }) {
+function ProjectView({ project, auth, clean }: { project: Project; auth: ProjectAuth; clean: boolean }) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [launching, setLaunching] = useState(false);
@@ -142,30 +148,30 @@ function ProjectView({ project, auth }: { project: Project; auth: ProjectAuth })
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: bg, transition: "background .3s" }}>
-      {/* Minimal top bar */}
-      <header className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: bdr }}>
-        <div>
-          <span className="text-sm font-bold tracking-tighter" style={{ color: "#fff" }}>
-            VASTU<span style={{ color: "#e2ffaf" }}>CHITRA</span>
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          {auth.email && (
-            <span className="text-xs" style={{ color: sub }}>for {auth.email}</span>
-          )}
-          {/* Theme toggle */}
-          <button onClick={() => setTheme(isDark ? "light" : "dark")}
-            className="w-8 h-8 rounded-full flex items-center justify-center border"
-            style={{ borderColor: bdr }}>
-            {isDark
-              ? <Sun size={13} style={{ color: "hsl(38 65% 60%)" }} />
-              : <Moon size={13} style={{ color: "hsl(220 60% 50%)" }} />}
-          </button>
-        </div>
-      </header>
+      {!clean && (
+        <header className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: bdr }}>
+          <div>
+            <span className="text-sm font-bold tracking-tighter" style={{ color: "#fff" }}>
+              VASTU<span style={{ color: "#e2ffaf" }}>CHITRA</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            {auth.email && (
+              <span className="text-xs" style={{ color: sub }}>for {auth.email}</span>
+            )}
+            <button onClick={() => setTheme(isDark ? "light" : "dark")}
+              className="w-8 h-8 rounded-full flex items-center justify-center border"
+              style={{ borderColor: bdr }}>
+              {isDark
+                ? <Sun size={13} style={{ color: "hsl(38 65% 60%)" }} />
+                : <Moon size={13} style={{ color: "hsl(220 60% 50%)" }} />}
+            </button>
+          </div>
+        </header>
+      )}
 
       {/* Main content — single project card, centered */}
-      <main className="flex-1 flex items-center justify-center px-4 py-12">
+      <main className={`flex-1 flex items-center justify-center px-4 ${clean ? "py-6 sm:py-10" : "py-12"}`}>
         <div className="w-full max-w-sm">
           <motion.div
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
@@ -236,9 +242,11 @@ function ProjectView({ project, auth }: { project: Project; auth: ProjectAuth })
               </div>
             </div>
 
-            <p className="text-center text-xs mt-6" style={{ color: isDark ? "hsl(240 6% 32%)" : "hsl(220 10% 60%)" }}>
-              This is a private preview link. Please do not share.
-            </p>
+            {!clean && (
+              <p className="text-center text-xs mt-6" style={{ color: isDark ? "hsl(240 6% 32%)" : "hsl(220 10% 60%)" }}>
+                This is a private preview link. Please do not share.
+              </p>
+            )}
           </motion.div>
         </div>
       </main>

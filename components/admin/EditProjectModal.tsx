@@ -273,6 +273,7 @@ export default function EditProjectModal({ project, onClose, onUpdate }: EditPro
                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground pt-4 border-t border-border/30">Thumbnails</h4>
                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="space-y-2">
+                         <label className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest">Main Thumbnail</label>
                          <div className="relative group aspect-video bg-secondary/20 border border-border border-dashed rounded-2xl overflow-hidden flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-secondary/30 transition-all">
                             {mainImage ? <img src={URL.createObjectURL(mainImage)} className="absolute inset-0 w-full h-full object-cover" /> 
                              : project?.image_url ? <img src={project.image_url} className="absolute inset-0 w-full h-full object-cover" /> 

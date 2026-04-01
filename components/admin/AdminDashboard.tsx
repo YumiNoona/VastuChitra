@@ -419,6 +419,17 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                        >
                          <LinkIcon size={14} />
                        </button>
+                       <button
+                         onClick={async () => {
+                           haptic();
+                           const token = await getProjectToken(p.id);
+                           window.open(`${window.location.origin}/p/${token}?clean=1`, "_blank");
+                         }}
+                         className="p-2 rounded-xl bg-background border border-border text-muted-foreground hover:text-vastu-green transition-all"
+                         title="Open private page"
+                       >
+                         <ArrowUpRight size={14} />
+                       </button>
                        <button 
                          onClick={() => {
                            haptic();
