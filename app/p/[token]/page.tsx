@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Mail, Eye, EyeOff, ArrowRight, RefreshCw, CheckCircle2, X, Sun, Moon } from "lucide-react";
+import { Lock, Eye, EyeOff, ArrowRight, CheckCircle2, X, Sun, Moon, Monitor, Smartphone } from "lucide-react";
 import { getProjectByToken, verifyOtp, Project, ProjectAuth } from "@/lib/supabase";
 import { useTheme } from "next-themes";
 
@@ -266,7 +266,7 @@ function LaunchModal({ project, auth, clientEmail, onClose, isDark }: {
   const [name,    setName]    = useState("");
   const [email,   setEmail]   = useState(clientEmail || "");
   const [contact, setContact] = useState("");
-  const [step,    setStep]    = useState<"form"|"launching">("form");
+  const [step,    setStep]    = useState<"form"|"instructions"|"launching">("form");
 
   // Auth States
   const [pw,       setPw]       = useState("");
@@ -351,7 +351,7 @@ function LaunchModal({ project, auth, clientEmail, onClose, isDark }: {
       }
     }
 
-    executeLaunch();
+    setStep("instructions");
   };
 
   const bg  = isDark ? "hsl(240 15% 6%)"  : "hsl(38 52% 95%)";
@@ -490,6 +490,44 @@ function LaunchModal({ project, auth, clientEmail, onClose, isDark }: {
               {checking ? <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"/> : "Launch Tour →"}
             </motion.button>
           </>
+        ) : step === "instructions" ? (
+          <div>
+            <div className="mb-5">
+              <h3 className="font-light text-base" style={{ color: fg, fontFamily: "Georgia, serif" }}>
+                Before you start
+              </h3>
+              <p className="text-xs mt-0.5" style={{ color: sub }}>
+                Quick guide to navigate the project stream.
+              </p>
+            </div>
+
+            <div className="p-3 rounded-xl mb-4 border" style={{ background: isDark ? "hsl(38 20% 12%)" : "hsl(38 45% 88%)", borderColor: bdr }}>
+              <p className="text-xs leading-relaxed" style={{ color: fg }}>
+                <strong className="block mb-1">Session Notice</strong>
+                Each cloud GPU session lasts <span style={{ color: "#e2ffaf", fontWeight: 600 }}>15 minutes</span>. Inactive sessions may disconnect automatically.
+              </p>
+            </div>
+
+            <InstructionTabs isDark={isDark} />
+
+            <motion.button
+              onClick={executeLaunch}
+              className="w-full mt-5 py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2"
+              style={{ background: "#e2ffaf", color: "#000" }}
+              whileHover={{ y: -1, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              I Understand, Launch Tour <ArrowRight size={13} />
+            </motion.button>
+
+            <button
+              onClick={() => setStep("form")}
+              className="w-full text-xs mt-3"
+              style={{ color: sub }}
+            >
+              Back
+            </button>
+          </div>
         ) : (
           <div className="text-center py-6">
             <div className="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center"
@@ -502,5 +540,75 @@ function LaunchModal({ project, auth, clientEmail, onClose, isDark }: {
         )}
       </motion.div>
     </motion.div>
+  );
+}
+
+function InstructionTabs({ isDark }: { isDark: boolean }) {
+  const [tab, setTab] = useState<"desktop" | "mobile">("desktop");
+  const fg = isDark ? "hsl(40 18% 88%)" : "hsl(220 30% 10%)";
+  const sub = isDark ? "hsl(240 6% 48%)" : "hsl(220 14% 42%)";
+  const bdr = isDark ? "hsl(240 10% 14%)" : "hsl(38 20% 80%)";
+  const panel = isDark ? "hsl(240 14% 7%)" : "hsl(38 30% 87%)";
+
+  return (
+    <div>
+      <div className="flex rounded-xl p-1 mb-4 border" style={{ borderColor: bdr, background: panel }}>
+        <button
+          onClick={() => setTab("desktop")}
+          className="flex-1 py-2 text-xs rounded-lg flex items-center justify-center gap-2"
+          style={{ background: tab === "desktop" ? "rgba(255,255,255,0.12)" : "transparent", color: tab === "desktop" ? fg : sub }}
+        >
+          <Monitor size={14} /> Desktop
+        </button>
+        <button
+          onClick={() => setTab("mobile")}
+          className="flex-1 py-2 text-xs rounded-lg flex items-center justify-center gap-2"
+          style={{ background: tab === "mobile" ? "rgba(255,255,255,0.12)" : "transparent", color: tab === "mobile" ? fg : sub }}
+        >
+          <Smartphone size={14} /> Mobile
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        {tab === "desktop" ? (
+          <>
+            <InstructionRow label="Look Around" value="Left click + drag" fg={fg} sub={sub} bdr={bdr} />
+            <InstructionRow label="Move / Walk" value="W A S D or Arrow keys" fg={fg} sub={sub} bdr={bdr} />
+            <InstructionRow label="Interact" value="Single left click" fg={fg} sub={sub} bdr={bdr} />
+            <InstructionRow label="Zoom" value="Mouse wheel" fg={fg} sub={sub} bdr={bdr} />
+          </>
+        ) : (
+          <>
+            <InstructionRow label="Look Around" value="One-finger drag" fg={fg} sub={sub} bdr={bdr} />
+            <InstructionRow label="Move / Walk" value="On-screen joystick" fg={fg} sub={sub} bdr={bdr} />
+            <InstructionRow label="Interact" value="Single tap" fg={fg} sub={sub} bdr={bdr} />
+            <InstructionRow label="Menu / Settings" value="Three-finger tap" fg={fg} sub={sub} bdr={bdr} />
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function InstructionRow({
+  label,
+  value,
+  fg,
+  sub,
+  bdr,
+}: {
+  label: string;
+  value: string;
+  fg: string;
+  sub: string;
+  bdr: string;
+}) {
+  return (
+    <div className="flex items-center justify-between py-2 border-b last:border-0" style={{ borderColor: bdr }}>
+      <span className="text-xs" style={{ color: fg }}>{label}</span>
+      <span className="text-[11px] px-2 py-1 rounded-md" style={{ color: sub, border: `1px solid ${bdr}` }}>
+        {value}
+      </span>
+    </div>
   );
 }

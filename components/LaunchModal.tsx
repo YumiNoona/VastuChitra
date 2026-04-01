@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ArrowRight, Loader2, CheckCircle2, Phone, Mail, Eye, EyeOff, SendHorizonal } from "lucide-react";
+import { X, ArrowRight, Loader2, CheckCircle2, Phone, Mail, Eye, EyeOff, SendHorizonal, Monitor, Smartphone } from "lucide-react";
 import { Project, saveVisitor, verifyOtp } from "@/lib/supabase";
 import { haptic } from "ios-haptics";
 
@@ -11,6 +11,7 @@ interface Props { project: Project | null; onClose: () => void; }
 type Stage =
   | "form"
   | "submitting"
+  | "instructions"
   | "success"
   | "pw-wrong"
   | "otp-sending"
@@ -47,6 +48,18 @@ export default function LaunchModal({ project, onClose }: Props) {
     return !Object.keys(e).length;
   };
 
+  // Debug shortcut to jump straight to instructions panel
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey || e.altKey) && (e.code === 'KeyQ' || e.key.toLowerCase() === 'q')) {
+        e.preventDefault();
+        setStage("instructions");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const normalizePhone = (p: string) => {
     const n = p.replace(/[\s\-()]/g, "");
     if (n.startsWith("+")) return n;
@@ -69,6 +82,12 @@ export default function LaunchModal({ project, onClose }: Props) {
         }),
       }).catch(() => {});
     } catch { /* silent */ }
+    setStage("instructions");
+    haptic.confirm();
+  };
+
+  const finishLaunch = () => {
+    if (!project) return;
     setStage("success");
     haptic.confirm();
     setTimeout(() => {
@@ -147,7 +166,8 @@ export default function LaunchModal({ project, onClose }: Props) {
           style={{ background:"hsl(222 24% 3%/0.8)", backdropFilter:"blur(12px)" }}
           initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}/>
 
-        <motion.div className="relative w-full max-w-[420px] rounded-[2rem] border overflow-hidden"
+        <motion.div className="relative w-full max-w-[460px] rounded-[2rem] border overflow-hidden"
+          layout
           style={{ background:"rgba(10, 10, 10, 0.9)", borderColor:"rgba(255, 255, 255, 0.1)", boxShadow:"0 32px 80px rgba(0,0,0,0.8)", backdropFilter:"blur(20px)" }}
           initial={{ scale:0.88, opacity:0, y:20, filter:"blur(8px)" }}
           animate={{ scale:1, opacity:1, y:0, filter:"blur(0px)" }}
@@ -167,6 +187,31 @@ export default function LaunchModal({ project, onClose }: Props) {
           </button>
 
           <AnimatePresence mode="wait">
+
+            {/* ── INSTRUCTIONS ──────────────────────────────────────── */}
+            {stage==="instructions" && (
+              <motion.div key="instructions" className="p-8"
+                initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-20 }}>
+                <h2 className="text-xl font-medium tracking-tight mb-4 text-white">Before you start</h2>
+                
+                <div className="p-4 rounded-2xl mb-6" style={{ background:"hsl(38 20% 15%)", border:"1px solid hsl(38 30% 25%)" }}>
+                  <p className="text-xs leading-relaxed" style={{ color:"rgba(255,255,255,0.8)" }}>
+                    <strong className="text-white mb-1.5 block">Session Notice</strong>
+                    These immersive experiences run on high-performance cloud GPUs. To manage costs and ensure availability, 
+                    <span style={{ color:VASTU_GREEN }}> each session is limited to 15 minutes</span>. Inactive sessions will be disconnected.
+                  </p>
+                </div>
+                
+                <InstructionsTabs />
+
+                <motion.button onClick={finishLaunch}
+                  className="w-full mt-8 py-4 rounded-full text-xs font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-colors shadow-2xl shadow-vastu-green/10"
+                  style={{ background:VASTU_GREEN, color:"#000000" }}
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale:0.98 }}>
+                  I Understand, Start Stream <ArrowRight size={14}/>
+                </motion.button>
+              </motion.div>
+            )}
 
             {/* ── SUCCESS ───────────────────────────────────────────── */}
             {stage==="success" && (
@@ -428,6 +473,56 @@ function OtpBoxes({ value, onChange }: { value:string; onChange:(v:string)=>void
           onBlur={e=>e.currentTarget.style.borderColor=(value[i]||"").trim()?VASTU_GREEN:"rgba(255, 255, 255, 0.1)"}
         />
       ))}
+    </div>
+  );
+}
+
+function InstructionsTabs() {
+  const [tab, setTab] = useState<"desktop" | "mobile">("desktop");
+  
+  return (
+    <div>
+      <div className="flex p-1 rounded-xl mb-5 border border-white/5" style={{ background:"rgba(255,255,255,0.03)" }}>
+        <button 
+          onClick={()=>setTab('desktop')}
+          className={`flex-1 py-2.5 text-xs font-medium rounded-lg flex items-center justify-center gap-2.5 transition-colors ${tab==='desktop' ? 'bg-white/10 text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`} 
+        >
+          <Monitor size={15}/> Desktop
+        </button>
+        <button 
+          onClick={()=>setTab('mobile')}
+          className={`flex-1 py-2.5 text-xs font-medium rounded-lg flex items-center justify-center gap-2.5 transition-colors ${tab==='mobile' ? 'bg-white/10 text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`} 
+        >
+          <Smartphone size={15}/> Mobile
+        </button>
+      </div>
+
+      <div className="space-y-3 min-h-[160px]">
+        {tab === "desktop" ? (
+          <>
+             <ControlRow label="Look Around" desc="Left Click + Drag" />
+             <ControlRow label="Move/Walk" desc="W, A, S, D Keys or Arrows" />
+             <ControlRow label="Interact" desc="Single Left Click" />
+             <ControlRow label="Zoom" desc="Mouse Scroll Wheel" />
+          </>
+        ) : (
+          <>
+             <ControlRow label="Look Around" desc="One Finger Drag" />
+             <ControlRow label="Move/Walk" desc="On-screen Joystick (bottom left)" />
+             <ControlRow label="Interact" desc="Single Tap" />
+             <ControlRow label="Menu/Settings" desc="Three Fingers Tap" />
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ControlRow({ label, desc }: { label:string; desc:string }) {
+  return (
+    <div className="flex justify-between items-center py-2.5 border-b border-white/5 last:border-0">
+      <span className="text-xs font-medium text-white/80">{label}</span>
+      <span className="text-[11px] text-white/60 bg-white/5 px-2.5 py-1.5 rounded-md border border-white/5">{desc}</span>
     </div>
   );
 }
