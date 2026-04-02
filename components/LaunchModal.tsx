@@ -6,7 +6,12 @@ import { X, ArrowRight, Loader2, CheckCircle2, Phone, Mail, Eye, EyeOff, SendHor
 import { Project, saveVisitor, verifyOtp } from "@/lib/supabase";
 import { haptic } from "ios-haptics";
 
-interface Props { project: Project | null; onClose: () => void; }
+interface Props {
+  project: Project | null;
+  onClose: () => void;
+  privateToken?: string;
+  clientEmail?: string;
+}
 
 type Stage =
   | "form"
@@ -24,10 +29,10 @@ const SALES_PHONE = "+919763965277";
 // Theme
 const VASTU_GREEN = "#e2ffaf";
 
-export default function LaunchModal({ project, onClose }: Props) {
+export default function LaunchModal({ project, onClose, privateToken, clientEmail }: Props) {
   const [stage,    setStage]   = useState<Stage>("form");
   const [name,     setName]    = useState("");
-  const [email,    setEmail]   = useState("");
+  const [email,    setEmail]   = useState(clientEmail || "");
   const [contact,  setContact] = useState("");
   const [password, setPassword] = useState("");
   const [showPw,   setShowPw]  = useState(false);
@@ -43,7 +48,14 @@ export default function LaunchModal({ project, onClose }: Props) {
     if (!name.trim())    e.name    = "Name is required";
     if (!email.trim())   e.email   = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(email)) e.email = "Enter a valid email";
-    if (!contact.trim()) e.contact = "Phone is required";
+    
+    const digitsOnly = contact.replace(/\D/g, "");
+    if (!contact.trim()) {
+      e.contact = "Phone is required";
+    } else if (digitsOnly.length < 10) {
+      e.contact = "Please enter a valid 10-digit mobile number";
+    }
+    
     setErrors(e);
     return !Object.keys(e).length;
   };
@@ -105,7 +117,7 @@ export default function LaunchModal({ project, onClose }: Props) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        linkToken: `main-${project.id}`,
+        linkToken: privateToken || `main-${project.id}`,
         phone: normalizePhone(contact),
         email,
         projectTitle: project.title,
@@ -128,7 +140,7 @@ export default function LaunchModal({ project, onClose }: Props) {
       return;
     }
     setStage("otp-verifying");
-    const { valid } = await verifyOtp(`main-${project.id}`, otp.replace(/\s/g,""));
+    const { valid } = await verifyOtp(privateToken || `main-${project.id}`, otp.replace(/\s/g,""));
     if (valid) {
       await launch();
     } else {
@@ -343,7 +355,7 @@ export default function LaunchModal({ project, onClose }: Props) {
                   {/* Phone — with inline Send Code for OTP */}
                   <LField label="Phone / WhatsApp" error={errors.contact}>
                     <div className="flex gap-2">
-                      <input type="tel" placeholder="+91 98765 43210" value={contact}
+                      <input type="tel" placeholder="98765 43210" value={contact}
                         onChange={e=>{ setContact(e.target.value); setErrors(p=>({...p,contact:""})); }}
                         className="flex-1 px-4 py-2.5 outline-none rounded-xl text-sm font-light transition-colors"
                         style={iStyle("contact")}

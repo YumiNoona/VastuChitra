@@ -142,11 +142,11 @@ function Gallery({ media }: { media: SiteUpdate[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-video rounded-[2rem] overflow-hidden border border-border bg-secondary/20 transition-colors duration-1000 group">
+      <div className="relative aspect-video rounded-[2rem] overflow-hidden border border-border bg-secondary/20 transition-colors duration-300 group">
         <AnimatePresence mode="wait">
           <motion.div
             key={active}
-            className="absolute inset-0 w-full h-full flex items-center justify-center bg-background/50 transition-colors duration-1000"
+            className="absolute inset-0 w-full h-full flex items-center justify-center bg-background/50 transition-colors duration-300"
             initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
@@ -241,10 +241,14 @@ export default function ProjectDetail({
   project,
   onBack,
   onLaunch,
+  hideBackButton = false,
+  isPrivate = false,
 }: {
   project: Project;
   onBack: () => void;
   onLaunch: (p: Project) => void;
+  hideBackButton?: boolean;
+  isPrivate?: boolean;
 }) {
   const [data, setData] = useState<Project | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -280,15 +284,19 @@ export default function ProjectDetail({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="bg-background text-foreground min-h-screen selection:bg-vastu-green selection:text-black transition-colors duration-1000 ease-in-out"
+      className="bg-background text-foreground min-h-screen selection:bg-vastu-green selection:text-black transition-colors duration-300 ease-in-out"
     >
       {/* ── Navbar ── */}
-      <nav className="fixed top-0 inset-x-0 z-50 py-4 px-6 md:px-12 bg-background/40 backdrop-blur-xl border-b border-border transition-colors duration-1000">
+      <nav className="fixed top-0 inset-x-0 z-50 py-4 px-6 md:px-12 bg-background/40 backdrop-blur-xl border-b border-border transition-colors duration-300">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <button onClick={onBack} className="group flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-vastu-green transition-colors">
-            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
-            Back to Projects
-          </button>
+          {hideBackButton ? (
+            <div />
+          ) : (
+            <button onClick={onBack} className="group flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-vastu-green transition-colors">
+              <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+              Back to Projects
+            </button>
+          )}
           
           <div className="flex items-center gap-6">
             {p.has_live_updates && p.gallery_updates?.length > 0 && (
@@ -297,7 +305,7 @@ export default function ProjectDetail({
                 <span className="text-[10px] font-bold uppercase tracking-wider text-vastu-green">Gallery</span>
               </div>
             )}
-            <span className="hidden md:inline text-[10px] font-bold uppercase tracking-widest text-muted-foreground transition-colors duration-1000">
+            <span className="hidden md:inline text-[10px] font-bold uppercase tracking-widest text-muted-foreground transition-colors duration-300">
               {p.type} — {p.year}
             </span>
           </div>
@@ -319,8 +327,8 @@ export default function ProjectDetail({
           />
         </AnimatePresence>
         
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent transition-colors duration-1000" />
-        <div className="absolute inset-0 bg-background/10 transition-colors duration-1000" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent transition-colors duration-300" />
+        <div className="absolute inset-0 bg-background/10 transition-colors duration-300" />
 
         <motion.div 
           style={{ opacity: heroOpacity }}
@@ -336,24 +344,24 @@ export default function ProjectDetail({
               <MapPin size={14} />
               <span className="text-xs font-bold uppercase tracking-[0.3em]">{p.location}</span>
             </div>
-            <h1 className="text-7xl md:text-9xl font-medium tracking-tighter leading-[0.85] text-foreground transition-colors duration-1000">
+            <h1 className="text-7xl md:text-9xl font-medium tracking-tighter leading-[0.85] text-foreground transition-colors duration-300">
               {p.title.split(' ').map((word, i) => (
                 <span key={i} className="block">{word}</span>
               ))}
             </h1>
-            <p className="max-w-xl text-lg text-muted-foreground font-light leading-relaxed transition-colors duration-1000">
+            <p className="max-w-xl text-lg text-muted-foreground font-light leading-relaxed transition-colors duration-300">
               {p.description}
             </p>
           </motion.div>
         </motion.div>
 
         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 opacity-30">
-          <div className="w-px h-12 bg-gradient-to-b from-transparent via-foreground to-transparent animate-draw-line transition-colors duration-1000" />
+          <div className="w-px h-12 bg-gradient-to-b from-transparent via-foreground to-transparent animate-draw-line transition-colors duration-300" />
         </div>
 
         {/* Theme Toggle */}
         {(p.image_url_dark || p.image_url_light) && (
-          <div className="absolute bottom-10 right-8 md:right-12 z-20 flex gap-2 p-1.5 rounded-full bg-background/40 backdrop-blur-md border border-border transition-colors duration-1000">
+          <div className="absolute bottom-10 right-8 md:right-12 z-20 flex gap-2 p-1.5 rounded-full bg-background/40 backdrop-blur-md border border-border transition-colors duration-300">
             <button onClick={() => switchTheme("light")} className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${heroTheme === "light" || heroTheme === "main" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}>Light Mode</button>
             <button onClick={() => switchTheme("dark")} className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${heroTheme === "dark" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}>Dark Mode</button>
           </div>
@@ -406,14 +414,14 @@ export default function ProjectDetail({
           <aside className="space-y-12">
             
             {/* Project Info Card */}
-            <div className="p-10 rounded-[2.5rem] bg-secondary/40 border border-border backdrop-blur-md space-y-10 lg:sticky lg:top-32 transition-colors duration-1000">
+            <div className="p-10 rounded-[2.5rem] bg-secondary/40 border border-border backdrop-blur-md space-y-10 lg:sticky lg:top-32 transition-colors duration-300">
               <div className="space-y-6">
                  <Label>{p.title}</Label>
                  <div className="grid gap-6">
                     {specs.map(spec => (
-                      <div key={spec.label} className="group border-b border-border transition-colors duration-1000 pb-4 last:border-0">
+                      <div key={spec.label} className="group border-b border-border transition-colors duration-300 pb-4 last:border-0">
                         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-vastu-green transition-colors">{spec.label}</p>
-                        <p className="text-sm text-foreground/80 font-light mt-1 transition-colors duration-1000">{spec.value}</p>
+                        <p className="text-sm text-foreground/80 font-light mt-1 transition-colors duration-300">{spec.value}</p>
                       </div>
                     ))}
                  </div>
@@ -435,44 +443,11 @@ export default function ProjectDetail({
           </aside>
         </div>
 
-        {/* ── Bottom Immersive CTA ── */}
-        {p.stream_url && (
-          <section className="mt-64 relative rounded-[3.5rem] overflow-hidden bg-secondary transition-colors duration-1000">
-             <div className="absolute inset-0">
-                <img src={p.image_url} className="w-full h-full object-cover opacity-20" />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent transition-colors duration-1000" />
-             </div>
-             
-             <div className="relative z-10 py-32 px-8 text-center flex flex-col items-center">
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  className="w-24 h-24 rounded-full bg-vastu-green/10 border border-vastu-green/30 flex items-center justify-center mb-10"
-                >
-                  <Play size={32} className="text-vastu-green ml-2" fill="currentColor" />
-                </motion.div>
-                
-                <h2 className="text-4xl md:text-7xl font-medium tracking-tighter text-foreground transition-colors duration-1000 max-w-4xl mb-8">
-                  Step Inside the <span className="italic text-vastu-green">Architecture</span>
-                </h2>
-                
-                <p className="text-lg text-muted-foreground transition-colors duration-1000 font-light max-w-2xl mb-12">
-                  Experience every detail through photorealistic pixel streaming. No downloads required. Pure architecture, directly in your browser.
-                </p>
-                
-                <button
-                  onClick={() => onLaunch(p)}
-                  className="px-12 py-6 rounded-full bg-vastu-green text-black font-bold uppercase text-xs tracking-[0.2em] hover:scale-110 active:scale-95 transition-all shadow-2xl shadow-vastu-green/40"
-                >
-                  Start The Tour
-                </button>
-             </div>
-          </section>
-        )}
+
       </main>
 
-      <footer className="py-24 border-t border-border transition-colors duration-1000 text-center px-8">
-        <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground/30 transition-colors duration-1000">VastuChitra ArchViz — {new Date().getFullYear()}</p>
+      <footer className="py-24 border-t border-border transition-colors duration-300 text-center px-8">
+        <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground/30 transition-colors duration-300">VastuChitra ArchViz — {new Date().getFullYear()}</p>
       </footer>
     </motion.div>
   );

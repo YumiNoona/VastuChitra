@@ -46,24 +46,24 @@
    VERCEL THEME - LIGHT
    ══════════════════════════════════════════════════════ */
 .light {
-  --background:          0 0% 100%;         /* Pure White */
-  --foreground:          0 0% 0%;           /* Pure Black */
+  --background:          0 0% 98%;          /* Softer Off-White */
+  --foreground:          0 0% 10%;          /* Soft Black */
   --card:                0 0% 100%;
-  --card-foreground:     0 0% 0%;
+  --card-foreground:     0 0% 10%;
   --popover:             0 0% 100%;
-  --popover-foreground:  0 0% 0%;
+  --popover-foreground:  0 0% 10%;
   --primary:             0 0% 0%;
   --primary-foreground:  0 0% 100%;
-  --secondary:           0 0% 96%;
+  --secondary:           0 0% 94%;
   --secondary-foreground:0 0% 0%;
-  --muted:               0 0% 96%;
-  --muted-foreground:    0 0% 40%;
-  --accent:              79 60% 50%;        /* Darker Green for Light */
+  --muted:               0 0% 94%;
+  --muted-foreground:    0 0% 45%;
+  --accent:              79 60% 50%;
   --accent-foreground:   0 0% 100%;
   --destructive:         0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --border:              0 0% 92%;          /* Vercel Light Border #eaeaea */
-  --input:               0 0% 92%;
+  --border:              0 0% 90%;          /* Soft Gray Border */
+  --input:               0 0% 90%;
   --ring:                0 0% 0%;
 
   --vastu-green:         79 100% 40%;
