@@ -95,11 +95,9 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       <aside className="w-64 border-r border-border flex flex-col fixed inset-y-0 left-0 z-40 bg-background/50 backdrop-blur-xl">
         <div className="p-6 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
-              <span className="text-background font-bold text-lg leading-none">V</span>
-            </div>
+            <img src="/logo.png" alt="Logo" className="dark:hidden h-8 w-auto" />
+            <img src="/dlogo.png" alt="Logo" className="hidden dark:block h-8 w-auto" />
             <div>
-              <span className="text-sm font-semibold block tracking-tight">VastuChitra</span>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-vastu-green animate-pulse" />
                 <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest opacity-60">Admin</span>

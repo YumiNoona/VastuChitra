@@ -20,7 +20,7 @@ async function sendViaTwilio(to: string, code: string, projectTitle: string): Pr
     else phone = `+${phone}`;
   }
 
-  const body = `Your VastuChitra access code for ${projectTitle}: ${code}\nValid 10 mins. Do not share.`;
+  const body = `Your IPDS access code for ${projectTitle}: ${code}\nValid 10 mins. Do not share.`;
 
   const res = await fetch(
     `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,
@@ -53,7 +53,7 @@ async function sendViaVonage(to: string, code: string, projectTitle: string): Pr
   if (phone.startsWith("+")) phone = phone.slice(1);
   else if (phone.length === 10) phone = `91${phone}`; // bare Indian number
 
-  const text = `Your VastuChitra access code for ${projectTitle}: ${code}. Valid 10 mins.`;
+  const text = `Your IPDS access code for ${projectTitle}: ${code}. Valid 10 mins.`;
 
   const res = await fetch("https://rest.nexmo.com/sms/json", {
     method: "POST",
@@ -62,7 +62,7 @@ async function sendViaVonage(to: string, code: string, projectTitle: string): Pr
       api_key: apiKey,
       api_secret: apiSecret,
       to: phone,
-      from: process.env.VONAGE_SENDER_ID ?? "VastuChitra",
+      from: process.env.VONAGE_SENDER_ID ?? "IPDS",
       text,
     }),
   });
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
     const { code, error: dbErr } = await createOtp(linkToken, contact);
     if (dbErr) return NextResponse.json({ error: dbErr }, { status: 500 });
 
-    const title = projectTitle ?? "VastuChitra ArchViz";
+    const title = projectTitle ?? "IPDS ArchViz";
     let sent = false;
     let channel = "";
 

@@ -31,13 +31,9 @@ export default function Navbar() {
       >
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           {/* Logo */}
-          <a href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center transition-transform group-hover:scale-105">
-              <span className="text-background font-bold text-xl leading-none">V</span>
-            </div>
-            <span className="text-base font-semibold tracking-tight">
-              VastuChitra
-            </span>
+          <a href="/" className="flex items-center group">
+            <img src="/logo.png" alt="IPDS Logo" className="dark:hidden h-10 w-auto transition-transform group-hover:scale-105" />
+            <img src="/dlogo.png" alt="IPDS Logo" className="hidden dark:block h-10 w-auto transition-transform group-hover:scale-105" />
           </a>
 
           {/* Desktop Links */}

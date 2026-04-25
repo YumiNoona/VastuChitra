@@ -34,7 +34,7 @@ function ProjectCard({
       className="group cursor-pointer"
       onClick={() => onExplore(project)}
     >
-      <div className="bevel-card overflow-hidden bg-secondary/50 h-full flex flex-col">
+      <div className="relative overflow-hidden bg-secondary/30 h-full flex flex-col rounded-[2.5rem] border border-white/5 group-hover:border-vastu-green/20 group-hover:bg-secondary/50 transition-all duration-500 shadow-2xl group-hover:shadow-vastu-green/5">
         {/* Image Container */}
         <div className="relative aspect-[16/10] overflow-hidden">
           <motion.img
@@ -45,12 +45,12 @@ function ProjectCard({
             transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
           
           {/* Featured Badge */}
           {project.featured && (
-            <div className="absolute top-4 left-4">
-              <span className="px-2 py-0.5 rounded-full bg-vastu-green/20 border border-vastu-green/30 text-vastu-green text-[10px] font-semibold uppercase tracking-wider backdrop-blur-md">
+            <div className="absolute top-6 left-6">
+              <span className="px-3 py-1 rounded-full bg-vastu-green/20 border border-vastu-green/30 text-vastu-green text-[10px] font-bold uppercase tracking-widest backdrop-blur-md">
                 Featured
               </span>
             </div>
@@ -58,34 +58,36 @@ function ProjectCard({
         </div>
 
         {/* Content */}
-        <div className="p-6 flex flex-col flex-grow">
-          <div className="flex items-start justify-between mb-2">
-            <h3 className={`text-xl font-medium tracking-tight transition-colors ${hovered ? "text-vastu-green" : "text-foreground"}`}>
+        <div className="p-8 flex flex-col flex-grow">
+          <div className="flex items-start justify-between mb-3">
+            <h3 className={`text-2xl font-medium tracking-tight transition-colors ${hovered ? "text-vastu-green" : "text-foreground"}`}>
               {project.title}
             </h3>
-            <ArrowUpRight size={18} className={`transition-all duration-300 ${hovered ? "translate-x-0.5 -translate-y-0.5 opacity-100" : "opacity-0"}`} />
+            <div className={`p-2 rounded-full border transition-all duration-500 ${hovered ? "border-vastu-green/50 text-vastu-green translate-x-1 -translate-y-1" : "border-white/10 text-muted-foreground"}`}>
+              <ArrowUpRight size={18} />
+            </div>
           </div>
           
-          <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium mb-4">
-            <span className="flex items-center gap-1">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium mb-5">
+            <span className="flex items-center gap-1.5">
               <MapPin size={12} className="opacity-50" />
               {project.location}
             </span>
             <span className="w-1 h-1 rounded-full bg-border" />
-            <span>{project.type}</span>
+            <span className="uppercase tracking-widest text-[10px] opacity-70">{project.type}</span>
           </div>
 
-          <p className="text-sm text-muted-foreground line-clamp-2 font-light leading-relaxed mb-6">
+          <p className="text-sm text-muted-foreground line-clamp-3 font-light leading-relaxed mb-8 opacity-80 group-hover:opacity-100 transition-opacity">
             {project.description || "Experimental architectural visualization exploring new paradigms of space and light."}
           </p>
 
           <div className="mt-auto flex items-center justify-between">
-            <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50">
-              {project.year}
-            </span>
-            <span className="text-xs font-medium text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-              View Case Study
-            </span>
+            <div className="flex items-center gap-2">
+              <div className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${hovered ? "bg-vastu-green animate-pulse" : "bg-white/20"}`} />
+              <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50">
+                Project {project.year}
+              </span>
+            </div>
           </div>
         </div>
       </div>

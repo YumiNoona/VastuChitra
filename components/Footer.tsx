@@ -7,15 +7,9 @@ export default function Footer() {
     <footer className="py-12 px-8 lg:px-16 border-t border-border bg-background">
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-8">
         <div className="flex items-center gap-4">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-secondary border border-border">
-            <svg width="16" height="16" viewBox="0 0 14 14" fill="none">
-              <path d="M1 13 L7 1 L13 13" className="stroke-vastu-green" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
+          <img src="/logo.png" alt="IPDS Logo" className="dark:hidden h-12 w-auto opacity-90" />
+          <img src="/dlogo.png" alt="IPDS Logo" className="hidden dark:block h-12 w-auto opacity-90" />
           <div className="flex flex-col">
-            <span className="text-sm font-medium text-foreground tracking-tight">
-              VastuChitra
-            </span>
             <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
               © {year} · ArchViz & Design
             </span>

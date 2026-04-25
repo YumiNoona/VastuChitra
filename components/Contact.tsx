@@ -19,9 +19,9 @@ export default function Contact() {
   };
 
   const contacts = [
-    { icon: Mail, label: "Email", value: "hello@vastuchitra.com", href: `mailto:hello@vastuchitra.com` },
-    { icon: Phone, label: "Phone", value: "+91 97639 65277", href: `tel:+91 97639 65277` },
-    { icon: MapPin, label: "Studio", value: "Mumbai, Maharashtra", href: "#" },
+    { icon: Mail, label: "Email", value: "admin@i-pds.com", href: `mailto:admin@i-pds.com` },
+    { icon: Phone, label: "Phone", value: "020-66268888", href: `tel:020-66268888` },
+    { icon: MapPin, label: "Studio", value: "Pune, Maharashtra", href: "https://maps.app.goo.gl/9X78pEzdHqe1iFya6" },
   ];
 
   return (
@@ -98,6 +98,8 @@ export default function Contact() {
                 <a
                   key={label}
                   href={href}
+                  target={href.startsWith("http") ? "_blank" : undefined}
+                  rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
                   className="flex items-center gap-5 group max-w-fit"
                 >
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-secondary border border-border group-hover:border-vastu-green/30 group-hover:bg-secondary/80 transition-all">
@@ -172,7 +174,7 @@ export default function Contact() {
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Shree Sadhna Phase 2, Mumbai"
+                    placeholder="e.g. Shree Sadhna Phase 2, Pune"
                     className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-vastu-green/40 focus:ring-1 focus:ring-vastu-green/10 transition-all"
                     value={form.project}
                     onChange={e => setForm(p => ({ ...p, project: e.target.value }))}

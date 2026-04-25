@@ -23,8 +23,8 @@ type Stage =
   | "otp-sent"
   | "otp-verifying";
 
-const SALES_EMAIL = "sales@vastuchitra.com";
-const SALES_PHONE = "+919763965277";
+const SALES_EMAIL = "admin@i-pds.com";
+const SALES_PHONE = "020-66268888";
 
 // Theme
 const VASTU_GREEN = "#e2ffaf";
@@ -89,8 +89,8 @@ export default function LaunchModal({ project, onClose, privateToken, clientEmai
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           recipients: [{ name, email, project: project.title }],
-          subject: "Welcome to {{project}} — VastuChitra ArchViz",
-          body: `Hi {{name}},\n\nThank you for exploring {{project}}.\n\nWarm regards,\nVastuChitra ArchViz Studio`,
+          subject: "Welcome to {{project}} — IPDS ArchViz",
+          body: `Hi {{name}},\n\nThank you for exploring {{project}}.\n\nWarm regards,\nIPDS ArchViz Studio`,
         }),
       }).catch(() => {});
     } catch { /* silent */ }

@@ -1,5 +1,5 @@
 -- ================================================================
--- VastuChitra ArchViz — COMPLETE DATABASE RESET
+-- IPDS ArchViz — COMPLETE DATABASE RESET
 -- ⚠️ WARNING: THIS WILL DELETE ALL EXISTING DATA AND IMAGES ⚠️
 -- ================================================================
 
@@ -92,7 +92,7 @@ CREATE POLICY "Public read/write auth" ON project_auth FOR ALL USING (true) WITH
 
 -- 3. SEED INITIAL CONFIG
 INSERT INTO site_config (key, value) VALUES 
-('global_settings', '{"site_name": "VastuChitra", "admin_email": "admin@vastuchitra.com"}'::jsonb);
+('global_settings', '{"site_name": "IPDS", "admin_email": "admin@ipds.com"}'::jsonb);
 
 
 -- ================================================================

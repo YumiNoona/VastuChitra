@@ -22,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <title>VastuChitra — Immersive ArchViz Platform</title>
+        <title>IPDS — Immersive ArchViz Platform</title>
         <meta name="description" content="Premium Unreal Engine architectural visualization showcase." />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="shortcut icon" href="/favicon.svg" />

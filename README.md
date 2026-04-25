@@ -1,6 +1,6 @@
 <div align="center">
 
-# ✦ VastuChitra ArchViz
+# ✦ IPDS ArchViz
 
 **A production-ready platform for hosting Unreal Engine architectural visualization experiences**
 
@@ -14,7 +14,7 @@ Built with Next.js 14 · Supabase · Framer Motion · Vercel
 
 ## What This Is
 
-VastuChitra ArchViz is a full-stack platform that turns Vagon Pixel Streaming URLs into a polished, client-facing architectural showcase. Projects are managed entirely through an admin panel — no code changes or redeploys needed to publish, edit, or gate a project.
+IPDS ArchViz is a full-stack platform that turns Vagon Pixel Streaming URLs into a polished, client-facing architectural showcase. Projects are managed entirely through an admin panel — no code changes or redeploys needed to publish, edit, or gate a project.
 
 Clients get a branded experience: browse projects, fill a lead form, and launch a live Unreal Engine walkthrough in a new tab. High-value projects can be locked behind a password or SMS OTP before the stream opens.
 
@@ -53,7 +53,7 @@ Clients get a branded experience: browse projects, fill a lead form, and launch 
 ## Project Structure
 
 ```
-VastuChitra/
+IPDS/
 ├── app/
 │   ├── layout.tsx              # Root layout — fonts, providers, cursor, navbar
 │   ├── page.tsx                # Public homepage
@@ -171,5 +171,5 @@ npm run dev
 ---
 
 <div align="center">
-<sub>VastuChitra ArchViz · Built with Next.js 14 + Supabase + Vercel · Made By VeilAFK (YumiNoona)</sub>
+<sub>IPDS ArchViz · Built with Next.js 14 + Supabase + Vercel · Made By VeilAFK (YumiNoona)</sub>
 </div>

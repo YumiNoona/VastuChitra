@@ -43,7 +43,7 @@ export function LoadingScreen({ onComplete }: { onComplete?: () => void }) {
         {/* Text Container */}
         <div className="relative">
           <h1 className="text-5xl md:text-7xl font-medium tracking-tight text-sweep select-none">
-            VastuChitra
+            IPDS
           </h1>
           
           {/* Sweeping Line Beam */}
